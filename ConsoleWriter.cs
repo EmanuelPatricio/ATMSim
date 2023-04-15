@@ -1,52 +1,45 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿namespace ATMSim;
 
-namespace ATMSim
+public interface IConsoleWriter
 {
-    public interface IConsoleWriter
-    {
-        public void Write(string text);
-        public void Write(int text);
-        public void WriteLine(string text);
-        public void WriteLine(int text);
-        public void ResetColor();
+	public void Write(string text);
+	public void Write(int text);
+	public void WriteLine(string text);
+	public void WriteLine(int text);
+	public void ResetColor();
 
-        public ConsoleColor ForegroundColor { get; set;}
-        public ConsoleColor BackgroundColor { get; set; }
-    }
+	public ConsoleColor ForegroundColor { get; set; }
+	public ConsoleColor BackgroundColor { get; set; }
+}
 
-    public class ConsoleWriter : IConsoleWriter
-    {
+public class ConsoleWriter : IConsoleWriter
+{
 
-        public ConsoleColor ForegroundColor { get => Console.ForegroundColor; set => Console.ForegroundColor = value; }
-        public ConsoleColor BackgroundColor { get => Console.BackgroundColor; set => Console.BackgroundColor = value; }
+	public ConsoleColor ForegroundColor { get => Console.ForegroundColor; set => Console.ForegroundColor = value; }
+	public ConsoleColor BackgroundColor { get => Console.BackgroundColor; set => Console.BackgroundColor = value; }
 
-        public void ResetColor()
-        {
-            Console.ResetColor();
-        }
+	public void ResetColor()
+	{
+		Console.ResetColor();
+	}
 
-        public void Write(string text)
-        {
-            Console.Write(text);
-        }
+	public void Write(string text)
+	{
+		Console.Write(text);
+	}
 
-        public void Write(int text)
-        {
-            Console.Write(text);
-        }
+	public void Write(int text)
+	{
+		Console.Write(text);
+	}
 
-        public void WriteLine(string text)
-        {
-            Console.WriteLine(text);
-        }
+	public void WriteLine(string text)
+	{
+		Console.WriteLine(text);
+	}
 
-        public void WriteLine(int text)
-        {
-            Console.WriteLine(text);
-        }
-    }
+	public void WriteLine(int text)
+	{
+		Console.WriteLine(text);
+	}
 }

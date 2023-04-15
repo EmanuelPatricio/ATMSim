@@ -13,4 +13,12 @@
     <None Remove="ATMSimTests\**" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EditorConfigFiles Remove="C:\Users\epatr\source\repos\ATMSim\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="C:\Users\epatr\source\repos\ATMSim\.editorconfig" />
+  </ItemGroup>
+
 </Project>

@@ -27,4 +27,12 @@
     <ProjectReference Include="..\ATMSim.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <EditorConfigFiles Remove="C:\Users\epatr\source\repos\ATMSim\ATMSimTests\.editorconfig" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="C:\Users\epatr\source\repos\ATMSim\ATMSimTests\.editorconfig" />
+  </ItemGroup>
+
 </Project>

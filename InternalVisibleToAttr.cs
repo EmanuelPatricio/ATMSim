@@ -1,2 +1,3 @@
 ﻿using System.Runtime.CompilerServices;
-[assembly: InternalsVisibleTo("ATMSimTests")] 
+
+[assembly: InternalsVisibleTo("ATMSimTests")]
