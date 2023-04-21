@@ -83,16 +83,12 @@ public class Autorizador : IAutorizador
 
 	public RespuestaConsultaDeBalance ConsultarBalance(string numeroTarjeta, byte[] criptogramaPin)
 	{
-		if (!TarjetaExiste(numeroTarjeta))
-			return new RespuestaConsultaDeBalance(56); // Esta tarjeta no se reconoce
+		var validacion = EsConsultaValida(numeroTarjeta, criptogramaPin);
 
-		if (!TarjetaTienePin(numeroTarjeta))
-			return new RespuestaConsultaDeBalance(55); // Esta tarjeta no tiene pin asignado
-
-		byte[] criptogramaPinReal = ObtenerCriptogramaPinTarjeta(numeroTarjeta);
-
-		if (!hsm.ValidarPin(criptogramaPin, criptogramaLlaveAutorizador, criptogramaPinReal))
-			return new RespuestaConsultaDeBalance(55); // Pin incorrecto
+		if (!validacion.Item1)
+		{
+			return new RespuestaConsultaDeBalance(validacion.Item2);
+		}
 
 		Tarjeta tarjeta = ObtenerTarjeta(numeroTarjeta);
 		Cuenta cuenta = ObtenerCuenta(tarjeta.NumeroCuenta);
@@ -102,16 +98,12 @@ public class Autorizador : IAutorizador
 
 	public RespuestaRetiro AutorizarRetiro(string numeroTarjeta, int montoRetiro, byte[] criptogramaPin)
 	{
-		if (!TarjetaExiste(numeroTarjeta))
-			return new RespuestaRetiro(56); // Esta tarjeta no se reconoce
+		var validacion = EsConsultaValida(numeroTarjeta, criptogramaPin);
 
-		if (!TarjetaTienePin(numeroTarjeta))
-			return new RespuestaRetiro(55); // Esta tarjeta no tiene pin asignado
-
-		byte[] criptogramaPinReal = ObtenerCriptogramaPinTarjeta(numeroTarjeta);
-
-		if (!hsm.ValidarPin(criptogramaPin, criptogramaLlaveAutorizador, criptogramaPinReal))
-			return new RespuestaRetiro(55); // Pin incorrecto
+		if (!validacion.Item1)
+		{
+			return new RespuestaRetiro(validacion.Item2);
+		}
 
 		Tarjeta tarjeta = ObtenerTarjeta(numeroTarjeta);
 		Cuenta cuenta = ObtenerCuenta(tarjeta.NumeroCuenta);
@@ -190,4 +182,19 @@ public class Autorizador : IAutorizador
 
 	}
 
+	private Tuple<bool, int> EsConsultaValida(string numeroTarjeta, byte[] criptogramaPin)
+	{
+		if (!TarjetaExiste(numeroTarjeta))
+			return new(false, 56); // Esta tarjeta no se reconoce
+
+		if (!TarjetaTienePin(numeroTarjeta))
+			return new(false, 55); // Esta tarjeta no tiene pin asignado
+
+		byte[] criptogramaPinReal = ObtenerCriptogramaPinTarjeta(numeroTarjeta);
+
+		if (!hsm.ValidarPin(criptogramaPin, criptogramaLlaveAutorizador, criptogramaPinReal))
+			return new(false, 55); // Pin incorrecto
+
+		return new(true, 0);
+	}
 }
