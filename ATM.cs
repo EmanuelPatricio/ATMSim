@@ -44,7 +44,6 @@ public class ATM : IATM
 {
 	private const int TAMANO_LLAVE = 32; // bytes
 
-
 	private byte[]? tpk;
 	public IATMSwitch? Switch { get; set; }
 	public string Nombre { get; set; }
