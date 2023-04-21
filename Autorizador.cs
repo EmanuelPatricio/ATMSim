@@ -11,8 +11,6 @@ public interface IAutorizador
 	public string Nombre { get; }
 	public void AsignarPin(string numeroTarjeta, string pin);
 	public void InstalarLlave(byte[] criptogramaLlaveAutorizador);
-
-
 }
 
 public class Respuesta
@@ -34,8 +32,6 @@ public class RespuestaRetiro : Respuesta
 	public int? BalanceLuegoDelRetiro { get; private set; }
 	public RespuestaRetiro(int codigoRespuesta, int? montoAutorizado = null, int? balanceLuegoDelRetiro = null) : base(codigoRespuesta)
 		=> (MontoAutorizado, BalanceLuegoDelRetiro) = (montoAutorizado, balanceLuegoDelRetiro);
-
-
 }
 
 public class Autorizador : IAutorizador
@@ -71,7 +67,6 @@ public class Autorizador : IAutorizador
 		byte[] criptogramaPin = hsm.EncriptarPinConLlaveMaestra(pin);
 
 		pinesTarjetas[numeroTarjeta] = criptogramaPin;
-
 	}
 
 	private bool TarjetaExiste(string numeroTarjeta) => tarjetas.Where(x => x.Numero == numeroTarjeta).Any();
