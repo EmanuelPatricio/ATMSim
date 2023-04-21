@@ -31,7 +31,6 @@ public class AtmSwitchTests
 		atmSwitch.RegistrarATM(atm, llaveATM.LlaveEncriptada);
 	}
 
-
 	private static void RegistrarAutorizadorEnSwitch(IAutorizador autorizador, IATMSwitch atmSwitch, IHSM hsm)
 	{
 		ComponentesLlave llaveAutorizador = hsm.GenerarLlave();
@@ -122,6 +121,93 @@ public class AtmSwitchTests
 
 	}
 
+	[Fact]//validar si devuelve error generico
+	public void Withdrawal_without_balance_on_account_fail()
+	{
+		// ARRANGE
+		FakeConsoleWriter consoleWriter = new();
+		IHSM hsm = new HSM();
+		IATMSwitch sut = CrearSwitch(hsm, consoleWriter);
+		IATM atm = CrearATMFalso("AJP001");
+		RegistrarATMEnSwitch(atm, sut, hsm);
+		IAutorizador autorizador = CrearAutorizador("AutDB", hsm);
+		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
 
+		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 0, binTarjeta, "1234");
+
+		byte[] llaveEnClaro = ((FakeATM)atm).Llave;
+		byte[] criptogramaPin = Encriptar("1234", llaveEnClaro);
+
+		// ACT
+		List<Comando> comandosRespuesta = sut.Autorizar(atm, teclasRetiroConRecibo, numeroTarjeta, 200, criptogramaPin);
+
+		// ASSERT
+		_ = comandosRespuesta.Should().HaveCountGreaterThanOrEqualTo(1);
+		_ = comandosRespuesta.Should().Contain(x => x.GetType() == typeof(ComandoMostrarInfoEnPantalla));
+
+		ComandoMostrarInfoEnPantalla comando = (ComandoMostrarInfoEnPantalla)comandosRespuesta
+			.Where(x => x.GetType() == typeof(ComandoMostrarInfoEnPantalla)).Single();
+		_ = comando.Error.Equals(true);
+
+	}
+
+	[Fact]
+	public void Withdrawal_with_a_wrong_operation_Key_fail()
+	{
+		// ARRANGE
+		FakeConsoleWriter consoleWriter = new();
+		IHSM hsm = new HSM();
+		IATMSwitch sut = CrearSwitch(hsm, consoleWriter);
+		IATM atm = CrearATMFalso("AJP001");
+		RegistrarATMEnSwitch(atm, sut, hsm);
+		IAutorizador autorizador = CrearAutorizador("AutDB", hsm);
+		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
+
+		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 0, binTarjeta, "1234");
+
+		byte[] llaveEnClaro = ((FakeATM)atm).Llave;
+		byte[] criptogramaPin = Encriptar("1234", llaveEnClaro);
+
+		// ACT
+		List<Comando> comandosRespuesta = sut.Autorizar(atm, "XXI", numeroTarjeta, 200, criptogramaPin);
+
+		// ASSERT
+		_ = comandosRespuesta.Should().HaveCountGreaterThanOrEqualTo(1);
+		_ = comandosRespuesta.Should().Contain(x => x.GetType() == typeof(ComandoMostrarInfoEnPantalla));
+
+		ComandoMostrarInfoEnPantalla comando = (ComandoMostrarInfoEnPantalla)comandosRespuesta.Where(x => x.GetType() == typeof(ComandoMostrarInfoEnPantalla)).Single();
+		_ = comando.Error.Equals(true);
+		_ = comando.TextoPantalla.Equals("Lo Sentimos. En este momento no podemos procesar su transacción.\\n\\n\" +\r\n\t\t\t\t\t   \"Por favor intente más tarde...");
+
+	}
+
+	[Fact]
+	public void Withdrawal_with_a_wrong_ping_fail()
+	{
+		// ARRANGE
+		FakeConsoleWriter consoleWriter = new();
+		IHSM hsm = new HSM();
+		IATMSwitch sut = CrearSwitch(hsm, consoleWriter);
+		IATM atm = CrearATMFalso("AJP001");
+		RegistrarATMEnSwitch(atm, sut, hsm);
+		IAutorizador autorizador = CrearAutorizador("AutDB", hsm);
+		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
+
+		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20000, binTarjeta, "1234");
+
+		byte[] llaveEnClaro = ((FakeATM)atm).Llave;
+		byte[] criptogramaPin = Encriptar("3874", llaveEnClaro);
+
+		// ACT
+		List<Comando> comandosRespuesta = sut.Autorizar(atm, teclasRetiroConRecibo, numeroTarjeta, 200, criptogramaPin);
+
+		// ASSERT
+		ComandoMostrarInfoEnPantalla comando = (ComandoMostrarInfoEnPantalla)comandosRespuesta.Where(x => x.GetType() == typeof(ComandoMostrarInfoEnPantalla)).Single();
+
+		_ = comandosRespuesta.Should().HaveCountGreaterThanOrEqualTo(1);
+		_ = comandosRespuesta.Should().Contain(x => x.GetType() == typeof(ComandoMostrarInfoEnPantalla));
+		_ = comando.TextoPantalla.Equals("Pin incorrecto");
+
+	}
 
 }
