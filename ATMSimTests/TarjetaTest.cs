@@ -26,7 +26,6 @@ public class TarjetaTests
 		Assert.Throws<ArgumentException>(() => new Tarjeta(numeroTarjeta, "1234"));
 	}
 
-
 	[Fact]
 	public void Calculate_verification_number_should_be_the_proper_value()
 	{
@@ -39,8 +38,6 @@ public class TarjetaTests
 		// Assert
 		Assert.Equal(2, resultado);
 	}
-
-
 
 	[Fact]
 	public void Integrity_validation_should_be_true_with_the_proper_creditCardNumber()
