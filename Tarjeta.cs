@@ -6,31 +6,21 @@ public class Tarjeta
 {
 	public string Numero { get; private set; }
 
-	public static string EnmascararNumero(string numeroTarjeta)
-	{
-		return numeroTarjeta[0..6] + new String('*', numeroTarjeta.Length - 10) + numeroTarjeta[^4..];
-	}
-
-
 	public string NumeroCuenta { get; private set; }
-
+	
 	public Tarjeta(string numero, string numeroCuenta, bool contieneDigitoVerificador = false)
 	{
-		if (!Regex.Match(numero, @"[0-9]{15,19}").Success)
+
+		if (NumeroDeTarjetaValido(numero))
 			throw new ArgumentException("Numero de tarjeta inválido");
 
-		if (contieneDigitoVerificador)
+		if (contieneDigitoVerificador && !ValidarIntegridad(numero))
 		{
-			if (!ValidarIntegridad(numero))
-				throw new ArgumentException("Dígito verificador inválido");
-		}
-		else
-		{
-			numero = numero + CalcularDigitoVerificacion(numero);
+			throw new ArgumentException("Dígito verificador inválido");
 		}
 
 		NumeroCuenta = numeroCuenta;
-		Numero = numero;
+		Numero = contieneDigitoVerificador ? numero : numero + CalcularDigitoVerificacion(numero);
 	}
 
 	public static int CalcularDigitoVerificacion(string numeroSinDigitoVerificador)
@@ -63,5 +53,17 @@ public class Tarjeta
 		int digitoVerificadorAValidar = (int)char.GetNumericValue(numero[^1]);
 
 		return CalcularDigitoVerificacion(numeroSinDigitoVerificador) == digitoVerificadorAValidar;
+	}
+
+	public static string EnmascararNumero(string numeroTarjeta)
+	{
+		int longitudMascara = numeroTarjeta.Length - 10;
+
+		return numeroTarjeta[0..6] + new String('*', longitudMascara) + numeroTarjeta[^4..];
+	}
+
+	public static bool NumeroDeTarjetaValido(string numeroTarjeta)
+	{
+		return !Regex.IsMatch(numeroTarjeta, @"[0-9]{15,19}");
 	}
 }
