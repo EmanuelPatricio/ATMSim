@@ -6,8 +6,6 @@ namespace ATMSimTests;
 
 public class AuthorizerTests
 {
-
-
 	private static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, int balanceInicial, string binTarjeta, string pin)
 	{
 		string numeroCuenta = autorizador.CrearCuenta(tipoCuenta, balanceInicial);
@@ -18,7 +16,7 @@ public class AuthorizerTests
 
 	private static IAutorizador CrearAutorizador(string nombre, IHSM hsm) => new Autorizador(nombre, hsm);
 
-	public byte[] Encriptar(string textoPlano, byte[] llaveEnClaro)
+	public static byte[] Encriptar(string textoPlano, byte[] llaveEnClaro)
 	{
 		const int TAMANO_LLAVE = 32;
 
@@ -37,8 +35,6 @@ public class AuthorizerTests
 			sw.Write(textoPlano);
 		}
 		return ms.ToArray();
-
-
 	}
 
 	[Fact]
@@ -59,7 +55,6 @@ public class AuthorizerTests
 		_ = respuesta.MontoAutorizado.Should().Be(15_500);
 		_ = respuesta.BalanceLuegoDelRetiro.Should().Be(-5_500);
 		_ = respuesta.CodigoRespuesta.Should().Be(0);
-
 	}
 
 	[Fact]
@@ -80,6 +75,72 @@ public class AuthorizerTests
 		// ASSERT
 		_ = respuesta.CodigoRespuesta.Should().Be(55);
 		_ = respuesta.BalanceActual.Should().BeNull();
+	}
 
+	// Mis pruebas
+	[Fact]
+	public void AccountOfTypeSavingsDoesntAllowOverdraftAndReturns51()
+	{
+		// ARRANGE
+		IHSM hsm = new HSM();
+		IAutorizador sut = CrearAutorizador("Autorizador", hsm);
+		ComponentesLlave llave = hsm.GenerarLlave();
+		sut.InstalarLlave(llave.LlaveEncriptada);
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Ahorros, 10_000, "455555", "1234");
+		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
+
+		// ACT
+		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 15_500, criptogramaPin);
+
+		// ASSERT
+		_ = respuesta.CodigoRespuesta.Should().Be(51);
+	}
+
+	[Fact]
+	public void BalanceInquiryWithCorrectPinReturnInitialBalance()
+	{
+		// ARRANGE
+		IHSM hsm = new HSM();
+		IAutorizador sut = CrearAutorizador("Autorizador", hsm);
+		ComponentesLlave llave = hsm.GenerarLlave();
+		sut.InstalarLlave(llave.LlaveEncriptada);
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 10_000, "455555", "1234");
+		byte[] criptogramaPinIncorrecto = Encriptar("1234", llave.LlaveEnClaro);
+
+		// ACT
+		RespuestaConsultaDeBalance respuesta = sut.ConsultarBalance(numeroTarjeta, criptogramaPinIncorrecto);
+
+		// ASSERT
+		_ = respuesta.CodigoRespuesta.Should().Be(0);
+		_ = respuesta.BalanceActual.Should().Be(10_000);
+	}
+
+	[Fact]
+	public void CrearCuentaMethodShouldReturnAccountNumber()
+	{
+		// ARRANGE
+		IHSM hsm = new HSM();
+		IAutorizador sut = CrearAutorizador("Autorizador", hsm);
+
+		// ACT
+		var numeroCuenta = sut.CrearCuenta(TipoCuenta.Corriente);
+
+		// ASSERT
+		_ = numeroCuenta.Should().NotBeNull();
+	}
+
+	[Fact]
+	public void CrearTarjetaMethodShouldReturnCardNumber()
+	{
+		// ARRANGE
+		IHSM hsm = new HSM();
+		IAutorizador sut = CrearAutorizador("Autorizador", hsm);
+		var numeroCuenta = sut.CrearCuenta(TipoCuenta.Corriente);
+
+		// ACT
+		var numeroTarjeta = sut.CrearTarjeta("455555", numeroCuenta);
+
+		// ASSERT
+		_ = numeroTarjeta.Should().NotBeNull();
 	}
 }
