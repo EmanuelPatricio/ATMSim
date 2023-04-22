@@ -179,4 +179,23 @@ public class AuthorizerTests
 		// ASSERT
 		_ = respuesta.CodigoRespuesta.Should().Be(51);
 	}
+
+	[Fact]
+	public void BlockedCardPreventsTransactionsShouldReturnStatus49()
+	{
+		// ARRANGE
+		IHSM hsm = new HSM();
+		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 50_000);
+		ComponentesLlave llave = hsm.GenerarLlave();
+		sut.InstalarLlave(llave.LlaveEncriptada);
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 20_000, 10_000, "455555", "1234");
+		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
+		sut.BloquearTarjeta(numeroTarjeta);
+
+		// ACT
+		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 1_000, criptogramaPin);
+
+		// ASSERT
+		_ = respuesta.CodigoRespuesta.Should().Be(49);
+	}
 }

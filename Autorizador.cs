@@ -11,6 +11,8 @@ public interface IAutorizador
 	public string Nombre { get; }
 	public void AsignarPin(string numeroTarjeta, string pin);
 	public void InstalarLlave(byte[] criptogramaLlaveAutorizador);
+	void BloquearTarjeta(string numeroTarjeta);
+	bool TarjetaBloqueada(string numeroTarjeta);
 }
 
 public class Respuesta
@@ -40,16 +42,17 @@ public class Autorizador : IAutorizador
 	private const int tamanoNumeroCuenta = 9;
 	private const string prefijoDeCuenta = "7";
 
-	private readonly Random random = new();
+	private Random random = new();
 	public string Nombre { get; private set; }
 
-	private readonly IHSM hsm;
-	private readonly List<Tarjeta> tarjetas = new();
-	private readonly List<Cuenta> cuentas = new();
-	private readonly Dictionary<string, byte[]> pinesTarjetas = new();
+	private IHSM hsm;
+	private List<Tarjeta> tarjetas = new();
+	private List<Cuenta> cuentas = new();
+	private Dictionary<string, byte[]> pinesTarjetas = new();
+	private Dictionary<string, bool> bloqueoTarjetas = new();
 
 	private byte[]? criptogramaLlaveAutorizador;
-	private readonly decimal limiteTransaccion;
+	private decimal limiteTransaccion;
 
 	public Autorizador(string nombre, IHSM hsm, decimal limiteTransaccion)
 	{
@@ -70,6 +73,9 @@ public class Autorizador : IAutorizador
 
 		pinesTarjetas[numeroTarjeta] = criptogramaPin;
 	}
+
+	public void BloquearTarjeta(string numeroTarjeta) => bloqueoTarjetas[numeroTarjeta] = true;
+	public bool TarjetaBloqueada(string numeroTarjeta) => bloqueoTarjetas[numeroTarjeta];
 
 	private bool TarjetaExiste(string numeroTarjeta) => tarjetas.Where(x => x.Numero == numeroTarjeta).Any();
 
@@ -105,6 +111,11 @@ public class Autorizador : IAutorizador
 		if (!consultaValida)
 		{
 			return new RespuestaRetiro(codigoError);
+		}
+
+		if (bloqueoTarjetas[numeroTarjeta])
+		{
+			return new RespuestaRetiro(49); // Tarjeta bloqueada
 		}
 
 		Tarjeta tarjeta = ObtenerTarjeta(numeroTarjeta);
@@ -157,6 +168,7 @@ public class Autorizador : IAutorizador
 
 		Tarjeta tarjeta = new(numeroSinDigitoVerificador, numeroCuenta);
 		tarjetas.Add(tarjeta);
+		bloqueoTarjetas[tarjeta.Numero] = false;
 
 		return tarjeta.Numero;
 	}
