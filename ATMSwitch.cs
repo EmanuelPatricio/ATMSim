@@ -92,9 +92,9 @@ public class ATMSwitch : IATMSwitch
 		this.consoleWriter = consoleWriter;
 	}
 
-	public bool CheckIfAtmExist(IATM atm)
+	public bool CheckIfAtmExist(string Nombre)
 	{
-		return LlavesDeAtm.ContainsKey(atm.Nombre);
+		return LlavesDeAtm.ContainsKey(Nombre);
 	}
 	public bool ChechIfAutorizadorIsAlreadyRegistered(string nombreAutorizador)
 	{
@@ -104,7 +104,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void RegistrarATM(IATM atm, byte[] criptogramaLlave)
 	{
-		if (CheckIfAtmExist(atm))
+		if (CheckIfAtmExist(atm.Nombre))
 			throw new EntidadYaRegistradaException($"El ATM {atm.Nombre} ya se encuentra registrado");
 
 		LlavesDeAtm[atm.Nombre] = criptogramaLlave;
@@ -123,7 +123,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void EliminarATM(IATM atm)
 	{
-		if (!CheckIfAtmExist(atm))
+		if (!CheckIfAtmExist(atm.Nombre))
 			throw new EntidadNoRegistradaException($"El ATM {atm.Nombre} no se encuentra registrado");
 
 		atm.Reestablecer();
@@ -155,7 +155,7 @@ public class ATMSwitch : IATMSwitch
 			return MostrarErrorGenerico("Al parecer su tarjeta se encuentra bloqueada, por favor comuniquese con el personal pertinente...");
 		}
 
-		if (!LlavesDeAtm.ContainsKey(atm.Nombre) || !LlavesDeAutorizador.ContainsKey(autorizador.Nombre)) // Extract Method
+		if (!CheckIfAtmExist(atm.Nombre) || !LlavesDeAutorizador.ContainsKey(autorizador.Nombre)) // Extract Method
 			return MostrarErrorGenerico(MensageErrGenerico);
 
 		byte[] criptogramaLlaveOrigen = LlavesDeAtm[atm.Nombre];
@@ -264,7 +264,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void RegistrarAutorizador(IAutorizador autorizador, byte[] criptogramaLlaveAutorizador)
 	{
-		if (Autorizadores.ContainsKey(autorizador.Nombre)) // mejorar 
+		if (ChechIfAutorizadorIsAlreadyRegistered(autorizador.Nombre)) // mejorar 
 			throw new EntidadYaRegistradaException($"El Autorizador {autorizador.Nombre} ya se encuentra registrado");
 
 
@@ -274,7 +274,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void EliminarAutorizador(string nombreAutorizador)
 	{
-		if (!ChechIfAutorizadorIsAlreadyRegistered(nombreAutorizador)) // mejorar
+		if (!ChechIfAutorizadorIsAlreadyRegistered(nombreAutorizador)) 
 			throw new EntidadNoRegistradaException($"El Autorizador {nombreAutorizador} no se encuentra registrado");
 
 		_ = Autorizadores.Remove(nombreAutorizador);
@@ -320,7 +320,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void AgregarRuta(string bin, string nombreAutorizador)
 	{
-		if (!ChechIfAutorizadorIsAlreadyRegistered(nombreAutorizador)) //mejorar
+		if (!ChechIfAutorizadorIsAlreadyRegistered(nombreAutorizador))
 			throw new EntidadNoRegistradaException($"El Autorizador {nombreAutorizador} no se encuentra registrado");
 
 		// Si existe una ruta con el mismo bin, reemplazar destino
