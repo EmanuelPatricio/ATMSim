@@ -127,6 +127,9 @@ public class ATMSwitch : IATMSwitch
 
 	public List<Comando> Autorizar(IATM atm, string opKeyBuffer, string numeroTarjeta, int monto, byte[] criptogramaPin)
 	{
+		string MensageErrGenerico = "Lo Sentimos. En este momento no podemos procesar su transacción.\n\n" +
+					   "Por favor intente más tarde...";
+
 		ConfiguracionOpKey opKeyConfig;
 		IAutorizador autorizador;
 		try
@@ -139,16 +142,16 @@ public class ATMSwitch : IATMSwitch
 			Console.ForegroundColor = ConsoleColor.Red;
 			Console.WriteLine(e.ToString());
 			Console.ResetColor();
-			return MostrarErrorGenerico();
+			return MostrarErrorGenerico(MensageErrGenerico);
 		}
 
 		if (autorizador.TarjetaBloqueada(numeroTarjeta))
 		{
-			return MostrarErrorTarjetaBLoqueada();
+			return MostrarErrorGenerico("Al parecer su tarjeta se encuentra bloqueada, por favor comuniquese con el personal pertinente...");
 		}
 
 		if (!LlavesDeAtm.ContainsKey(atm.Nombre) || !LlavesDeAutorizador.ContainsKey(autorizador.Nombre)) // Extract Method
-			return MostrarErrorGenerico();
+			return MostrarErrorGenerico(MensageErrGenerico);
 
 		byte[] criptogramaLlaveOrigen = LlavesDeAtm[atm.Nombre];
 		byte[] criptogramaLlaveDestino = LlavesDeAutorizador[autorizador.Nombre];
@@ -163,25 +166,19 @@ public class ATMSwitch : IATMSwitch
 			case TipoTransaccion.Consulta:
 				return AutorizarConsulta(atm, numeroTarjeta, criptogramaTraducidoPin, autorizador, opKeyConfig);
 			default:
-				return MostrarErrorGenerico();
+				return MostrarErrorGenerico(MensageErrGenerico);
 
 		}
 
 	}	
-	private List<Comando> MostrarErrorTarjetaBLoqueada() // esto y mostrar error generico hacen lo mismo con parametros distintos
-	{
-		List<Comando> comandos = new();
-		string texto = "Al parecer su tarjeta se encuentra bloqueada, por favor comuniquese con el personal pertinente...";
-		comandos.Add(new ComandoMostrarInfoEnPantalla(texto, true));
-		return comandos;
-	}
 
-	private List<Comando> MostrarErrorGenerico()
+	//remove MostrarErrorTaretaBloqueada
+	private List<Comando> MostrarErrorGenerico(string errMessage)
 	{
-		List<Comando> comandos = new();
-		string texto = "Lo Sentimos. En este momento no podemos procesar su transacción.\n\n" +
-					   "Por favor intente más tarde...";
-		comandos.Add(new ComandoMostrarInfoEnPantalla(texto, true));
+		List<Comando> comandos = new()
+		{
+			new ComandoMostrarInfoEnPantalla(errMessage, true)
+		};
 		return comandos;
 	}
 
