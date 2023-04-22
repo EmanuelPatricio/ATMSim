@@ -1,7 +1,7 @@
 using ATMSim;
 using ATMSimTests.Fakes;
 using FluentAssertions;
-//Testing Actions
+
 namespace ATMSimTests;
 
 public class AtmTests
