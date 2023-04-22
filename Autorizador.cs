@@ -123,22 +123,15 @@ public class Autorizador : IAutorizador
 
 		if (cuenta.Tipo == TipoCuenta.Ahorros && cuenta.Monto < montoRetiro)
 			return new RespuestaRetiro(51); // Fondos Insuficientes
-		else
-		{
-			if (limiteTransaccion < montoRetiro)
-			{
-				return new RespuestaRetiro(50); // Limite de transaccion alcanzado
-			}
-			if (cuenta.Tipo == TipoCuenta.Corriente && cuenta.LimiteSobregiro != 0)
-			{
-				if (cuenta.Monto - montoRetiro < cuenta.LimiteSobregiro)
-				{
-					return new RespuestaRetiro(51); // Fondos Insuficientes
-				}
-			}
-			cuenta.Monto -= montoRetiro;
-			return new RespuestaRetiro(0, montoRetiro, cuenta.Monto); // Autorizado
-		}
+
+		if (limiteTransaccion < montoRetiro)
+			return new RespuestaRetiro(50); // Limite de transaccion alcanzado
+
+		if (cuenta.Monto - montoRetiro < cuenta.LimiteSobregiro && cuenta.LimiteSobregiro != 0)
+			return new RespuestaRetiro(51); // Fondos Insuficientes
+
+		cuenta.Monto -= montoRetiro;
+		return new RespuestaRetiro(0, montoRetiro, cuenta.Monto); // Autorizado
 
 	}
 
