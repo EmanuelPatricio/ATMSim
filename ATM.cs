@@ -73,9 +73,7 @@ public class ATM : IATM
 		}
 
 		byte[] criptogramaPin = Encriptar(pin);
-
 		comandos.AddRange(Switch.Autorizar(this, opKeyBuffer, numeroTarjeta, monto, criptogramaPin));
-
 		EjecutarListaComandos(comandos);
 	}
 
@@ -98,7 +96,7 @@ public class ATM : IATM
 					EjecutarComandoDispensarEfectivo(cmd);
 					break;
 				case ComandoDevolverTarjeta cmd:
-					EjecutarComandoDevolverTarjeta();
+					EjecutarComandoDevolverTarjeta(cmd);
 					break;
 				case ComandoImprimirRecibo cmd:
 					EjecutarComandoImprimirRecibo(cmd);
@@ -125,7 +123,7 @@ public class ATM : IATM
 		threadSleeper.Sleep(2000);
 	}
 
-	private void EjecutarComandoDevolverTarjeta()
+	private void EjecutarComandoDevolverTarjeta(ComandoDevolverTarjeta comando)
 	{
 		threadSleeper.Sleep(500);
 		consoleWriter.ForegroundColor = ConsoleColor.Yellow;
@@ -164,14 +162,12 @@ public class ATM : IATM
 
 	private byte[] Encriptar(string textoPlano)
 	{
-		const int TAMANO_LLAVE = 32;
+		int TAMANO_LLAVE = 32;
 
 		if (!Configurado)
-		{
 			throw new InvalidOperationException("El ATM aún no está configurado correctamente");
-		}
 
-		byte[] llave = tpk.Take(TAMANO_LLAVE).ToArray();
+		byte[] llave = tpk.Skip(0).Take(TAMANO_LLAVE).ToArray();
 		byte[] iv = tpk.Skip(TAMANO_LLAVE).ToArray();
 		using Aes llaveAes = Aes.Create();
 		llaveAes.Key = llave;
@@ -181,10 +177,15 @@ public class ATM : IATM
 
 		using MemoryStream ms = new();
 		using CryptoStream cs = new(ms, encriptador, CryptoStreamMode.Write);
-		using StreamWriter sw = new(cs);
-		sw.Write(textoPlano);
-
+		using (StreamWriter sw = new(cs))
+		{
+			sw.Write(textoPlano);
+		}
 		return ms.ToArray();
+
+
 	}
+
+
 
 }
