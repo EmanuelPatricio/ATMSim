@@ -96,6 +96,11 @@ public class ATMSwitch : IATMSwitch
 	{
 		return LlavesDeAtm.ContainsKey(atm.Nombre);
 	}
+	public bool ChechIfAutorizadorIsAlreadyRegistered(string nombreAutorizador)
+	{
+		return Autorizadores.ContainsKey(nombreAutorizador);
+	}
+
 
 	public void RegistrarATM(IATM atm, byte[] criptogramaLlave)
 	{
@@ -269,7 +274,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void EliminarAutorizador(string nombreAutorizador)
 	{
-		if (!Autorizadores.ContainsKey(nombreAutorizador)) // mejorar
+		if (!ChechIfAutorizadorIsAlreadyRegistered(nombreAutorizador)) // mejorar
 			throw new EntidadNoRegistradaException($"El Autorizador {nombreAutorizador} no se encuentra registrado");
 
 		_ = Autorizadores.Remove(nombreAutorizador);
@@ -305,7 +310,7 @@ public class ATMSwitch : IATMSwitch
 	{
 		try
 		{
-			return tablaOpKeys.Where(x => x.Teclas == opKeyBuffer).Single(); // validar, creo que esto se ejecuta demasiado 
+			return tablaOpKeys.Where(x => x.Teclas == opKeyBuffer).Single();
 		}
 		catch (InvalidOperationException e) // si no se encuentra ninguna
 		{
@@ -315,7 +320,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void AgregarRuta(string bin, string nombreAutorizador)
 	{
-		if (!Autorizadores.ContainsKey(nombreAutorizador)) //mejorar
+		if (!ChechIfAutorizadorIsAlreadyRegistered(nombreAutorizador)) //mejorar
 			throw new EntidadNoRegistradaException($"El Autorizador {nombreAutorizador} no se encuentra registrado");
 
 		// Si existe una ruta con el mismo bin, reemplazar destino
