@@ -87,6 +87,32 @@ public class AtmTests
 
 		// ASSERT
 		_ = consoleWriter.consoleText.Should().Contain("> Efectivo dispensado: 100");
+	}
 
+	[Fact]
+	public void BlockedCardWithdrawalNotSuccessful()
+	{
+		// ARRANGE
+		FakeConsoleWriter consoleWriter = new();
+		FakeThreadSleeper threadSleeper = new();
+
+		IHSM hsm = new HSM();
+
+		IATMSwitch atmSwitch = CrearSwitch(hsm, consoleWriter);
+
+		IATM sut = CrearATM("AJP001", consoleWriter, threadSleeper);
+		RegistrarATMEnSwitch(sut, atmSwitch, hsm);
+
+		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
+		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20_000, 0, "459413", "1234");
+		autorizador.BloquearTarjeta(numeroTarjeta);
+
+		RegistrarAutorizadorEnSwitch(autorizador, atmSwitch, hsm);
+
+		// ACT
+		sut.EnviarTransactionRequest("AAA", numeroTarjeta, "1234", 100);
+
+		// ASSERT
+		_ = consoleWriter.consoleText.Should().Contain("Al parecer su tarjeta se encuentra bloqueada, por favor comuniquese con el personal pertinente...");
 	}
 }

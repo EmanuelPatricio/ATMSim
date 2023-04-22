@@ -79,7 +79,7 @@ public interface IATMSwitch
 
 public class ATMSwitch : IATMSwitch
 {
-	private  IHSM hsm;
+	private IHSM hsm;
 	private Dictionary<string, byte[]> LlavesDeAtm { get; set; } = new Dictionary<string, byte[]>();
 	private Dictionary<string, byte[]> LlavesDeAutorizador { get; set; } = new Dictionary<string, byte[]>();
 
@@ -144,6 +144,11 @@ public class ATMSwitch : IATMSwitch
 			return MostrarErrorGenerico();
 		}
 
+		if (autorizador.TarjetaBloqueada(numeroTarjeta))
+		{
+			return MostrarErrorTarjetaBLoqueada();
+		}
+
 		if (!LlavesDeAtm.ContainsKey(atm.Nombre) || !LlavesDeAutorizador.ContainsKey(autorizador.Nombre))
 			return MostrarErrorGenerico();
 
@@ -164,6 +169,13 @@ public class ATMSwitch : IATMSwitch
 
 		}
 
+	}
+	private List<Comando> MostrarErrorTarjetaBLoqueada()
+	{
+		List<Comando> comandos = new();
+		string texto = "Al parecer su tarjeta se encuentra bloqueada, por favor comuniquese con el personal pertinente...";
+		comandos.Add(new ComandoMostrarInfoEnPantalla(texto, true));
+		return comandos;
 	}
 
 	private List<Comando> MostrarErrorGenerico()

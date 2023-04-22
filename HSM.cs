@@ -24,7 +24,7 @@ public class HSM : IHSM
 {
 	private const int TAMANO_LLAVE = 32; // bytes
 
-	private readonly Aes lmk; // llave maestra (Local Master Key)
+	private Aes lmk; // llave maestra (Local Master Key)
 	public HSM()
 	{
 		this.lmk = Aes.Create();
