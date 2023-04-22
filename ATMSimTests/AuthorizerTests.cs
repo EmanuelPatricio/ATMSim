@@ -6,9 +6,9 @@ namespace ATMSimTests;
 
 public class AuthorizerTests
 {
-	private static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, int balanceInicial, string binTarjeta, string pin)
+	private static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, int balanceInicial, decimal limiteSobregiro, string binTarjeta, string pin)
 	{
-		string numeroCuenta = autorizador.CrearCuenta(tipoCuenta, balanceInicial);
+		string numeroCuenta = autorizador.CrearCuenta(tipoCuenta, balanceInicial, limiteSobregiro);
 		string numeroTarjeta = autorizador.CrearTarjeta(binTarjeta, numeroCuenta);
 		autorizador.AsignarPin(numeroTarjeta, pin);
 		return numeroTarjeta;
@@ -45,7 +45,7 @@ public class AuthorizerTests
 		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 20_000);
 		ComponentesLlave llave = hsm.GenerarLlave();
 		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 10_000, "455555", "1234");
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 10_000, 0, "455555", "1234");
 		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
 
 		// ACT
@@ -65,7 +65,7 @@ public class AuthorizerTests
 		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 10_000);
 		ComponentesLlave llave = hsm.GenerarLlave();
 		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 10_000, "455555", "1234");
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 10_000, 0, "455555", "1234");
 
 		byte[] criptogramaPinIncorrecto = Encriptar("9999", llave.LlaveEnClaro);
 
@@ -86,7 +86,7 @@ public class AuthorizerTests
 		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 10_000);
 		ComponentesLlave llave = hsm.GenerarLlave();
 		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Ahorros, 10_000, "455555", "1234");
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Ahorros, 10_000, 0, "455555", "1234");
 		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
 
 		// ACT
@@ -104,7 +104,7 @@ public class AuthorizerTests
 		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 10_000);
 		ComponentesLlave llave = hsm.GenerarLlave();
 		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 10_000, "455555", "1234");
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 10_000, 0, "455555", "1234");
 		byte[] criptogramaPinIncorrecto = Encriptar("1234", llave.LlaveEnClaro);
 
 		// ACT
@@ -152,7 +152,7 @@ public class AuthorizerTests
 		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 10_000);
 		ComponentesLlave llave = hsm.GenerarLlave();
 		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Ahorros, 20_000, "455555", "1234");
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Ahorros, 20_000, 0, "455555", "1234");
 		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
 
 		// ACT
@@ -160,5 +160,23 @@ public class AuthorizerTests
 
 		// ASSERT
 		_ = respuesta.CodigoRespuesta.Should().Be(50);
+	}
+
+	[Fact]
+	public void AccountOfTypeCheckingReachedOverdraftLimitShouldReturnStatus51()
+	{
+		// ARRANGE
+		IHSM hsm = new HSM();
+		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 50_000);
+		ComponentesLlave llave = hsm.GenerarLlave();
+		sut.InstalarLlave(llave.LlaveEncriptada);
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 20_000, 10_000, "455555", "1234");
+		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
+
+		// ACT
+		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 35_000, criptogramaPin);
+
+		// ASSERT
+		_ = respuesta.CodigoRespuesta.Should().Be(51);
 	}
 }

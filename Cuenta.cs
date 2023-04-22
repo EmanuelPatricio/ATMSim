@@ -27,7 +27,20 @@ internal class Cuenta
 		}
 	}
 
-	public Cuenta(string numero, TipoCuenta tipo, int monto = 0)
+	private decimal limiteSobregiro;
+	public decimal LimiteSobregiro
+	{
+		get
+		{
+			return Tipo == TipoCuenta.Ahorros ? 0.00M : -Math.Abs(limiteSobregiro);
+		}
+		set
+		{
+			limiteSobregiro = Tipo == TipoCuenta.Ahorros ? 0.00M : -Math.Abs(value);
+		}
+	}
+
+	public Cuenta(string numero, TipoCuenta tipo, int monto = 0, decimal limite = 0.00M)
 	{
 		if (!Regex.Match(numero, @"[0-9]+").Success)
 			throw new ArgumentException("Numero de cuenta inválido");
@@ -35,6 +48,7 @@ internal class Cuenta
 		Numero = numero;
 		Tipo = tipo;
 		Monto = monto;
+		LimiteSobregiro = limite;
 	}
 
 }

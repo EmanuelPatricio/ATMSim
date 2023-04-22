@@ -7,7 +7,7 @@ public interface IAutorizador
 	public RespuestaConsultaDeBalance ConsultarBalance(string numeroTarjeta, byte[] criptogramaPin);
 	public RespuestaRetiro AutorizarRetiro(string numeroTarjeta, int montoRetiro, byte[] criptogramaPin);
 	public string CrearTarjeta(string bin, string numeroCuenta);
-	public string CrearCuenta(TipoCuenta tipo, int montoDeApertura = 0);
+	public string CrearCuenta(TipoCuenta tipo, int montoDeApertura = 0, decimal limiteSobregiro = 0.00M);
 	public string Nombre { get; }
 	public void AsignarPin(string numeroTarjeta, string pin);
 	public void InstalarLlave(byte[] criptogramaLlaveAutorizador);
@@ -85,11 +85,11 @@ public class Autorizador : IAutorizador
 
 	public RespuestaConsultaDeBalance ConsultarBalance(string numeroTarjeta, byte[] criptogramaPin)
 	{
-		var validacion = EsConsultaValida(numeroTarjeta, criptogramaPin);
+		var (consultaValida, codigoError) = EsConsultaValida(numeroTarjeta, criptogramaPin);
 
-		if (!validacion.Item1)
+		if (!consultaValida)
 		{
-			return new RespuestaConsultaDeBalance(validacion.Item2);
+			return new RespuestaConsultaDeBalance(codigoError);
 		}
 
 		Tarjeta tarjeta = ObtenerTarjeta(numeroTarjeta);
@@ -100,11 +100,11 @@ public class Autorizador : IAutorizador
 
 	public RespuestaRetiro AutorizarRetiro(string numeroTarjeta, int montoRetiro, byte[] criptogramaPin)
 	{
-		var validacion = EsConsultaValida(numeroTarjeta, criptogramaPin);
+		var (consultaValida, codigoError) = EsConsultaValida(numeroTarjeta, criptogramaPin);
 
-		if (!validacion.Item1)
+		if (!consultaValida)
 		{
-			return new RespuestaRetiro(validacion.Item2);
+			return new RespuestaRetiro(codigoError);
 		}
 
 		Tarjeta tarjeta = ObtenerTarjeta(numeroTarjeta);
@@ -117,6 +117,13 @@ public class Autorizador : IAutorizador
 			if (limiteTransaccion < montoRetiro)
 			{
 				return new RespuestaRetiro(50); // Limite de transaccion alcanzado
+			}
+			if (cuenta.Tipo == TipoCuenta.Corriente && cuenta.LimiteSobregiro != 0)
+			{
+				if (cuenta.Monto - montoRetiro < cuenta.LimiteSobregiro)
+				{
+					return new RespuestaRetiro(51); // Fondos Insuficientes
+				}
 			}
 			cuenta.Monto -= montoRetiro;
 			return new RespuestaRetiro(0, montoRetiro, cuenta.Monto); // Autorizado
@@ -154,7 +161,7 @@ public class Autorizador : IAutorizador
 		return tarjeta.Numero;
 	}
 
-	public string CrearCuenta(TipoCuenta tipo, int montoDeApertura = 0)
+	public string CrearCuenta(TipoCuenta tipo, int montoDeApertura = 0, decimal limiteSobregiro = 0.00M)
 	{
 		string numero;
 		do
@@ -164,7 +171,7 @@ public class Autorizador : IAutorizador
 		}
 		while (CuentaExiste(numero));
 
-		Cuenta cuenta = new(numero, tipo, montoDeApertura);
+		Cuenta cuenta = new(numero, tipo, montoDeApertura, limiteSobregiro);
 		cuentas.Add(cuenta);
 
 		return cuenta.Numero;

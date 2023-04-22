@@ -14,9 +14,9 @@ public class AtmSwitchTests
 
 	private static IATM CrearATMFalso(string nombre) => new FakeATM(nombre);
 
-	private static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, int balanceInicial, string binTarjeta, string pin)
+	private static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, int balanceInicial, decimal limiteSobregiro, string binTarjeta, string pin)
 	{
-		string numeroCuenta = autorizador.CrearCuenta(tipoCuenta, balanceInicial);
+		string numeroCuenta = autorizador.CrearCuenta(tipoCuenta, balanceInicial, limiteSobregiro);
 		string numeroTarjeta = autorizador.CrearTarjeta(binTarjeta, numeroCuenta);
 		autorizador.AsignarPin(numeroTarjeta, pin);
 		return numeroTarjeta;
@@ -103,7 +103,7 @@ public class AtmSwitchTests
 		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
 
-		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20_000, binTarjeta, "1234");
+		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20_000, 0, binTarjeta, "1234");
 
 		byte[] llaveEnClaro = ((FakeATM)atm).Llave;
 		byte[] criptogramaPin = Encriptar("1234", llaveEnClaro);
@@ -133,7 +133,7 @@ public class AtmSwitchTests
 		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
 
-		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 0, binTarjeta, "1234");
+		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 0, 0, binTarjeta, "1234");
 
 		byte[] llaveEnClaro = ((FakeATM)atm).Llave;
 		byte[] criptogramaPin = Encriptar("1234", llaveEnClaro);
@@ -163,7 +163,7 @@ public class AtmSwitchTests
 		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
 
-		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 0, binTarjeta, "1234");
+		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 0, 0, binTarjeta, "1234");
 
 		byte[] llaveEnClaro = ((FakeATM)atm).Llave;
 		byte[] criptogramaPin = Encriptar("1234", llaveEnClaro);
@@ -193,7 +193,7 @@ public class AtmSwitchTests
 		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
 
-		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20000, binTarjeta, "1234");
+		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20000, 0, binTarjeta, "1234");
 
 		byte[] llaveEnClaro = ((FakeATM)atm).Llave;
 		byte[] criptogramaPin = Encriptar("3874", llaveEnClaro);

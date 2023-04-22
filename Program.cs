@@ -9,6 +9,7 @@ const string binTarjeta = "459413";
 
 const TipoCuenta tipoDeCuenta = TipoCuenta.Ahorros;
 const int balanceInicialCuenta = 20_000;
+const decimal limiteSobregiro = 10_000.00M;
 
 const string teclasRetiroConRecibo = "AAA";
 const string teclasRetiroSinRecibo = "AAC";
@@ -29,7 +30,7 @@ RegistrarATMEnSwitch(atm, atmSwitch, hsm);
 IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 RegistrarAutorizadorEnSwitch(autorizador, atmSwitch, hsm);
 
-string numeroTarjeta = CrearCuentaYTarjeta(autorizador, tipoDeCuenta, balanceInicialCuenta, binTarjeta, pin);
+string numeroTarjeta = CrearCuentaYTarjeta(autorizador, tipoDeCuenta, balanceInicialCuenta, limiteSobregiro, binTarjeta, pin);
 
 SecuenciaDeTransaccionesDeEjemplo(atm, numeroTarjeta);
 
@@ -39,9 +40,9 @@ static IATM CrearATM(string nombre, IConsoleWriter consoleWriter, IThreadSleeper
 	=> new ATM(nombre, consoleWriter, threadSleeper);
 
 
-static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, int balanceInicial, string binTarjeta, string pin)
+static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, int balanceInicial, decimal limiteSobregiro, string binTarjeta, string pin)
 {
-	string numeroCuenta = autorizador.CrearCuenta(tipoCuenta, balanceInicial);
+	string numeroCuenta = autorizador.CrearCuenta(tipoCuenta, balanceInicial, limiteSobregiro);
 	string numeroTarjeta = autorizador.CrearTarjeta(binTarjeta, numeroCuenta);
 	autorizador.AsignarPin(numeroTarjeta, pin);
 	return numeroTarjeta;

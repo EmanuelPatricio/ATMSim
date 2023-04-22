@@ -13,9 +13,9 @@ public class AtmTests
 	private static IATM CrearATM(string nombre, IConsoleWriter consoleWriter, IThreadSleeper threadSleeper)
 		=> new ATM(nombre, consoleWriter, threadSleeper);
 
-	private static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, int balanceInicial, string binTarjeta, string pin)
+	private static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, int balanceInicial, decimal limiteSobregiro, string binTarjeta, string pin)
 	{
-		string numeroCuenta = autorizador.CrearCuenta(tipoCuenta, balanceInicial);
+		string numeroCuenta = autorizador.CrearCuenta(tipoCuenta, balanceInicial, limiteSobregiro);
 		string numeroTarjeta = autorizador.CrearTarjeta(binTarjeta, numeroCuenta);
 		autorizador.AsignarPin(numeroTarjeta, pin);
 		return numeroTarjeta;
@@ -80,7 +80,7 @@ public class AtmTests
 		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 		RegistrarAutorizadorEnSwitch(autorizador, atmSwitch, hsm);
 
-		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20_000, "459413", "1234");
+		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20_000, 0, "459413", "1234");
 
 		// ACT
 		sut.EnviarTransactionRequest("AAA", numeroTarjeta, "1234", 100);
