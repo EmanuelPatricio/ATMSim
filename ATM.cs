@@ -9,12 +9,11 @@ public interface IATM
 	public string Nombre { get; set; }
 
 	public bool Configurado { get; }
-
 	public void EnviarTransactionRequest(string opKeyBuffer, string numeroTarjeta, string pin, int monto = 0);
 	public void InstalarLlave(byte[] llave);
 	public void Reestablecer();
-
 }
+
 public class ATMNoEstaRegistradoException : Exception { }
 
 public class Comando { }
@@ -39,17 +38,13 @@ public class ComandoMostrarInfoEnPantalla : Comando
 }
 
 public class ComandoDevolverTarjeta : Comando { }
-
 public class ATM : IATM
 {
-	private const int TAMANO_LLAVE = 32; // bytes
-
 	private byte[]? tpk;
 	public IATMSwitch? Switch { get; set; }
 	public string Nombre { get; set; }
 
 	private readonly IConsoleWriter consoleWriter;
-
 	private readonly IThreadSleeper threadSleeper;
 
 	public ATM(string nombre, IConsoleWriter consoleWriter, IThreadSleeper threadSleeper)
@@ -59,43 +54,38 @@ public class ATM : IATM
 		this.threadSleeper = threadSleeper;
 	}
 
-	public bool Configurado { get { return tpk != null && Switch != null; } }
+	public bool Configurado => tpk != null && Switch != null;
 
 	public void EnviarTransactionRequest(string opKeyBuffer, string numeroTarjeta, string pin, int monto = 0)
 	{
-		if (!Configurado)
-			throw new InvalidOperationException("El ATM aún no está configurado correctamente");
+		bool validarPin = !Regex.IsMatch(pin, @"^[0-9]{4}$");
+		List<Comando> comandos = new();
 
-		if (!Regex.Match(pin, @"[0-9]{4}").Success)
-			MostrarError("ERROR.\n\nEl Pin debe ser un número de 4 digitos.");
+		if (!Configurado)
+		{
+			throw new InvalidOperationException("El ATM aún no está configurado correctamente");
+		}
+
+		if (validarPin)
+		{
+			string texto = "ERROR.\n\nEl Pin debe ser un número de 4 digitos.";
+			comandos.Add(new ComandoMostrarInfoEnPantalla(texto, true));
+		}
 
 		byte[] criptogramaPin = Encriptar(pin);
 
-		List<Comando> comandosDeRespuesta = Switch.Autorizar(this, opKeyBuffer, numeroTarjeta, monto, criptogramaPin);
-		EjecutarListaComandos(comandosDeRespuesta);
+		comandos.AddRange(Switch.Autorizar(this, opKeyBuffer, numeroTarjeta, monto, criptogramaPin));
+
+		EjecutarListaComandos(comandos);
 	}
 
 
-	public void InstalarLlave(byte[] llave)
-	{
-		tpk = llave;
-	}
+	public void InstalarLlave(byte[] llave) => tpk = llave;
 
 	public void Reestablecer()
 	{
 		tpk = null;
 		Switch = null;
-	}
-
-
-
-	private void MostrarError(string mensajeDeError)
-	{
-		List<Comando> comandos = new()
-		{
-			new ComandoMostrarInfoEnPantalla(mensajeDeError, true)
-		};
-		EjecutarListaComandos(comandos);
 	}
 
 	private void EjecutarListaComandos(List<Comando> comandos)
@@ -104,11 +94,20 @@ public class ATM : IATM
 		{
 			switch (comando)
 			{
-				case ComandoDispensarEfectivo cmd: EjecutarComandoDispensarEfectivo(cmd); break;
-				case ComandoDevolverTarjeta cmd: EjecutarComandoDevolverTarjeta(cmd); break;
-				case ComandoImprimirRecibo cmd: EjecutarComandoImprimirRecibo(cmd); break;
-				case ComandoMostrarInfoEnPantalla cmd: EjecutarComandoMostrarInfoEnPantalla(cmd); break;
-				default: throw new InvalidOperationException($"Comando {comando.GetType().Name} no soportado por el ATM");
+				case ComandoDispensarEfectivo cmd:
+					EjecutarComandoDispensarEfectivo(cmd);
+					break;
+				case ComandoDevolverTarjeta cmd:
+					EjecutarComandoDevolverTarjeta();
+					break;
+				case ComandoImprimirRecibo cmd:
+					EjecutarComandoImprimirRecibo(cmd);
+					break;
+				case ComandoMostrarInfoEnPantalla cmd:
+					EjecutarComandoMostrarInfoEnPantalla(cmd);
+					break;
+				default:
+					throw new InvalidOperationException($"Comando {comando.GetType().Name} no soportado por el ATM");
 			}
 		}
 		consoleWriter.ForegroundColor = ConsoleColor.DarkYellow;
@@ -126,7 +125,7 @@ public class ATM : IATM
 		threadSleeper.Sleep(2000);
 	}
 
-	private void EjecutarComandoDevolverTarjeta(ComandoDevolverTarjeta comando)
+	private void EjecutarComandoDevolverTarjeta()
 	{
 		threadSleeper.Sleep(500);
 		consoleWriter.ForegroundColor = ConsoleColor.Yellow;
@@ -165,10 +164,14 @@ public class ATM : IATM
 
 	private byte[] Encriptar(string textoPlano)
 	{
-		if (!Configurado)
-			throw new InvalidOperationException("El ATM aún no está configurado correctamente");
+		const int TAMANO_LLAVE = 32;
 
-		byte[] llave = tpk.Skip(0).Take(TAMANO_LLAVE).ToArray();
+		if (!Configurado)
+		{
+			throw new InvalidOperationException("El ATM aún no está configurado correctamente");
+		}
+
+		byte[] llave = tpk.Take(TAMANO_LLAVE).ToArray();
 		byte[] iv = tpk.Skip(TAMANO_LLAVE).ToArray();
 		using Aes llaveAes = Aes.Create();
 		llaveAes.Key = llave;
@@ -178,15 +181,10 @@ public class ATM : IATM
 
 		using MemoryStream ms = new();
 		using CryptoStream cs = new(ms, encriptador, CryptoStreamMode.Write);
-		using (StreamWriter sw = new(cs))
-		{
-			sw.Write(textoPlano);
-		}
+		using StreamWriter sw = new(cs);
+		sw.Write(textoPlano);
+
 		return ms.ToArray();
-
-
 	}
-
-
 
 }
