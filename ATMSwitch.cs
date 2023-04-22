@@ -29,9 +29,6 @@ public class RutaNoDisponibleException : Exception
 	public RutaNoDisponibleException(string mensaje, Exception innerException) : base(mensaje, innerException) { }
 }
 
-
-
-
 public enum TipoTransaccion
 {
 	Retiro,
@@ -48,7 +45,7 @@ public struct ConfiguracionOpKey
 
 public struct Ruta
 {
-	private string bin;
+	string bin;
 	public string Bin
 	{
 		get { return bin; }
@@ -82,11 +79,7 @@ public class ATMSwitch : IATMSwitch
 	private IHSM hsm;
 	private Dictionary<string, byte[]> LlavesDeAtm { get; set; } = new Dictionary<string, byte[]>();
 	private Dictionary<string, byte[]> LlavesDeAutorizador { get; set; } = new Dictionary<string, byte[]>();
-
-
 	private Dictionary<string, IAutorizador> Autorizadores { get; set; } = new Dictionary<string, IAutorizador>();
-
-
 
 	private List<Ruta> tablaRuteo = new();
 	private List<ConfiguracionOpKey> tablaOpKeys = new();
@@ -99,9 +92,14 @@ public class ATMSwitch : IATMSwitch
 		this.consoleWriter = consoleWriter;
 	}
 
+	public bool CheckIfAtmExist(IATM atm)
+	{
+		return LlavesDeAtm.ContainsKey(atm.Nombre);
+	}
+
 	public void RegistrarATM(IATM atm, byte[] criptogramaLlave)
 	{
-		if (LlavesDeAtm.ContainsKey(atm.Nombre))
+		if (CheckIfAtmExist(atm))
 			throw new EntidadYaRegistradaException($"El ATM {atm.Nombre} ya se encuentra registrado");
 
 		LlavesDeAtm[atm.Nombre] = criptogramaLlave;
@@ -120,7 +118,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void EliminarATM(IATM atm)
 	{
-		if (!LlavesDeAtm.ContainsKey(atm.Nombre))
+		if (!CheckIfAtmExist(atm))
 			throw new EntidadNoRegistradaException($"El ATM {atm.Nombre} no se encuentra registrado");
 
 		atm.Reestablecer();
@@ -149,7 +147,7 @@ public class ATMSwitch : IATMSwitch
 			return MostrarErrorTarjetaBLoqueada();
 		}
 
-		if (!LlavesDeAtm.ContainsKey(atm.Nombre) || !LlavesDeAutorizador.ContainsKey(autorizador.Nombre))
+		if (!LlavesDeAtm.ContainsKey(atm.Nombre) || !LlavesDeAutorizador.ContainsKey(autorizador.Nombre)) // Extract Method
 			return MostrarErrorGenerico();
 
 		byte[] criptogramaLlaveOrigen = LlavesDeAtm[atm.Nombre];
@@ -169,8 +167,8 @@ public class ATMSwitch : IATMSwitch
 
 		}
 
-	}
-	private List<Comando> MostrarErrorTarjetaBLoqueada()
+	}	
+	private List<Comando> MostrarErrorTarjetaBLoqueada() // esto y mostrar error generico hacen lo mismo con parametros distintos
 	{
 		List<Comando> comandos = new();
 		string texto = "Al parecer su tarjeta se encuentra bloqueada, por favor comuniquese con el personal pertinente...";
@@ -264,7 +262,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void RegistrarAutorizador(IAutorizador autorizador, byte[] criptogramaLlaveAutorizador)
 	{
-		if (Autorizadores.ContainsKey(autorizador.Nombre))
+		if (Autorizadores.ContainsKey(autorizador.Nombre)) // mejorar 
 			throw new EntidadYaRegistradaException($"El Autorizador {autorizador.Nombre} ya se encuentra registrado");
 
 
@@ -274,14 +272,14 @@ public class ATMSwitch : IATMSwitch
 
 	public void EliminarAutorizador(string nombreAutorizador)
 	{
-		if (!Autorizadores.ContainsKey(nombreAutorizador))
+		if (!Autorizadores.ContainsKey(nombreAutorizador)) // mejorar
 			throw new EntidadNoRegistradaException($"El Autorizador {nombreAutorizador} no se encuentra registrado");
 
 		_ = Autorizadores.Remove(nombreAutorizador);
 		_ = LlavesDeAutorizador.Remove(nombreAutorizador);
 	}
 
-	private IAutorizador DeterminarAutorizadorDestino(string numeroTarjeta)
+	private IAutorizador DeterminarAutorizadorDestino(string numeroTarjeta) // mejorar
 	{
 		string nombreAutorizador;
 		try
@@ -310,7 +308,7 @@ public class ATMSwitch : IATMSwitch
 	{
 		try
 		{
-			return tablaOpKeys.Where(x => x.Teclas == opKeyBuffer).Single();
+			return tablaOpKeys.Where(x => x.Teclas == opKeyBuffer).Single(); // validar, creo que esto se ejecuta demasiado 
 		}
 		catch (InvalidOperationException e) // si no se encuentra ninguna
 		{
@@ -320,7 +318,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void AgregarRuta(string bin, string nombreAutorizador)
 	{
-		if (!Autorizadores.ContainsKey(nombreAutorizador))
+		if (!Autorizadores.ContainsKey(nombreAutorizador)) //mejorar
 			throw new EntidadNoRegistradaException($"El Autorizador {nombreAutorizador} no se encuentra registrado");
 
 		// Si existe una ruta con el mismo bin, reemplazar destino
