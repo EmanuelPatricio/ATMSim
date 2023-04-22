@@ -29,9 +29,6 @@ public class RutaNoDisponibleException : Exception
 	public RutaNoDisponibleException(string mensaje, Exception innerException) : base(mensaje, innerException) { }
 }
 
-
-
-
 public enum TipoTransaccion
 {
 	Retiro,
@@ -91,9 +88,19 @@ public class ATMSwitch : IATMSwitch
 		this.consoleWriter = consoleWriter;
 	}
 
+	public bool CheckIfAtmExist(string Nombre)
+	{
+		return LlavesDeAtm.ContainsKey(Nombre);
+	}
+	public bool ChechIfAutorizadorIsAlreadyRegistered(string nombreAutorizador)
+	{
+		return Autorizadores.ContainsKey(nombreAutorizador);
+	}
+
+
 	public void RegistrarATM(IATM atm, byte[] criptogramaLlave)
 	{
-		if (LlavesDeAtm.ContainsKey(atm.Nombre))
+		if (CheckIfAtmExist(atm.Nombre))
 			throw new EntidadYaRegistradaException($"El ATM {atm.Nombre} ya se encuentra registrado");
 
 		LlavesDeAtm[atm.Nombre] = criptogramaLlave;
@@ -112,7 +119,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void EliminarATM(IATM atm)
 	{
-		if (!LlavesDeAtm.ContainsKey(atm.Nombre))
+		if (!CheckIfAtmExist(atm.Nombre))
 			throw new EntidadNoRegistradaException($"El ATM {atm.Nombre} no se encuentra registrado");
 
 		atm.Reestablecer();
@@ -136,7 +143,7 @@ public class ATMSwitch : IATMSwitch
 			return MostrarErrorGenerico();
 		}
 
-		if (!LlavesDeAtm.ContainsKey(atm.Nombre) || !LlavesDeAutorizador.ContainsKey(autorizador.Nombre))
+		if (!CheckIfAtmExist(atm.Nombre) || !LlavesDeAutorizador.ContainsKey(autorizador.Nombre))
 			return MostrarErrorGenerico();
 
 		byte[] criptogramaLlaveOrigen = LlavesDeAtm[atm.Nombre];
@@ -243,7 +250,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void RegistrarAutorizador(IAutorizador autorizador, byte[] criptogramaLlaveAutorizador)
 	{
-		if (Autorizadores.ContainsKey(autorizador.Nombre))
+		if (ChechIfAutorizadorIsAlreadyRegistered(autorizador.Nombre)) // mejorar 
 			throw new EntidadYaRegistradaException($"El Autorizador {autorizador.Nombre} ya se encuentra registrado");
 
 
@@ -253,14 +260,14 @@ public class ATMSwitch : IATMSwitch
 
 	public void EliminarAutorizador(string nombreAutorizador)
 	{
-		if (!Autorizadores.ContainsKey(nombreAutorizador))
+		if (!ChechIfAutorizadorIsAlreadyRegistered(nombreAutorizador))
 			throw new EntidadNoRegistradaException($"El Autorizador {nombreAutorizador} no se encuentra registrado");
 
 		_ = Autorizadores.Remove(nombreAutorizador);
 		_ = LlavesDeAutorizador.Remove(nombreAutorizador);
 	}
 
-	private IAutorizador DeterminarAutorizadorDestino(string numeroTarjeta)
+	private IAutorizador DeterminarAutorizadorDestino(string numeroTarjeta) // mejorar
 	{
 		string nombreAutorizador;
 		try
@@ -299,7 +306,7 @@ public class ATMSwitch : IATMSwitch
 
 	public void AgregarRuta(string bin, string nombreAutorizador)
 	{
-		if (!Autorizadores.ContainsKey(nombreAutorizador))
+		if (!ChechIfAutorizadorIsAlreadyRegistered(nombreAutorizador))
 			throw new EntidadNoRegistradaException($"El Autorizador {nombreAutorizador} no se encuentra registrado");
 
 		// Si existe una ruta con el mismo bin, reemplazar destino
