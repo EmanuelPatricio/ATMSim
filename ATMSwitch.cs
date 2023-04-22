@@ -79,7 +79,7 @@ public interface IATMSwitch
 
 public class ATMSwitch : IATMSwitch
 {
-	private readonly IHSM hsm;
+	private  IHSM hsm;
 	private Dictionary<string, byte[]> LlavesDeAtm { get; set; } = new Dictionary<string, byte[]>();
 	private Dictionary<string, byte[]> LlavesDeAutorizador { get; set; } = new Dictionary<string, byte[]>();
 
@@ -88,10 +88,10 @@ public class ATMSwitch : IATMSwitch
 
 
 
-	private readonly List<Ruta> tablaRuteo = new();
-	private readonly List<ConfiguracionOpKey> tablaOpKeys = new();
+	private List<Ruta> tablaRuteo = new();
+	private List<ConfiguracionOpKey> tablaOpKeys = new();
 
-	private readonly IConsoleWriter consoleWriter;
+	private IConsoleWriter consoleWriter;
 
 	public ATMSwitch(IHSM hsm, IConsoleWriter consoleWriter)
 	{
@@ -298,8 +298,7 @@ public class ATMSwitch : IATMSwitch
 	{
 		try
 		{
-			return tablaOpKeys.Where(x => x.Teclas == opKeyBuffer)
-							  .Single();
+			return tablaOpKeys.Where(x => x.Teclas == opKeyBuffer).Single();
 		}
 		catch (InvalidOperationException e) // si no se encuentra ninguna
 		{
