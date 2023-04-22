@@ -17,14 +17,14 @@ public interface IAutorizador
 
 public class Respuesta
 {
-	public int CodigoRespuesta { get; private set; }
-	public Respuesta(int codigoRespuesta) => CodigoRespuesta = codigoRespuesta;
+	public RespuestaOperacion CodigoRespuesta { get; private set; }
+	public Respuesta(RespuestaOperacion codigoRespuesta) => CodigoRespuesta = codigoRespuesta;
 }
 
 public class RespuestaConsultaDeBalance : Respuesta
 {
 	public int? BalanceActual { get; private set; }
-	public RespuestaConsultaDeBalance(int codigoRespuesta, int? balanceActual = null) : base(codigoRespuesta)
+	public RespuestaConsultaDeBalance(RespuestaOperacion codigoRespuesta, int? balanceActual = null) : base(codigoRespuesta)
 		=> BalanceActual = balanceActual;
 }
 
@@ -32,7 +32,7 @@ public class RespuestaRetiro : Respuesta
 {
 	public int? MontoAutorizado { get; private set; }
 	public int? BalanceLuegoDelRetiro { get; private set; }
-	public RespuestaRetiro(int codigoRespuesta, int? montoAutorizado = null, int? balanceLuegoDelRetiro = null) : base(codigoRespuesta)
+	public RespuestaRetiro(RespuestaOperacion codigoRespuesta, int? montoAutorizado = null, int? balanceLuegoDelRetiro = null) : base(codigoRespuesta)
 		=> (MontoAutorizado, BalanceLuegoDelRetiro) = (montoAutorizado, balanceLuegoDelRetiro);
 }
 
@@ -115,23 +115,23 @@ public class Autorizador : IAutorizador
 
 		if (bloqueoTarjetas[numeroTarjeta])
 		{
-			return new RespuestaRetiro(49); // Tarjeta bloqueada
+			return new RespuestaRetiro(RespuestaOperacion.TarjetaBloqueada);
 		}
 
 		Tarjeta tarjeta = ObtenerTarjeta(numeroTarjeta);
 		Cuenta cuenta = ObtenerCuenta(tarjeta.NumeroCuenta);
 
 		if (cuenta.Tipo == TipoCuenta.Ahorros && cuenta.Monto < montoRetiro)
-			return new RespuestaRetiro(51); // Fondos Insuficientes
+			return new RespuestaRetiro(RespuestaOperacion.FondosInsuficientes);
 
 		if (limiteTransaccion < montoRetiro)
-			return new RespuestaRetiro(50); // Limite de transaccion alcanzado
+			return new RespuestaRetiro(RespuestaOperacion.LimiteTransaccion);
 
 		if (cuenta.Monto - montoRetiro < cuenta.LimiteSobregiro && cuenta.LimiteSobregiro != 0)
-			return new RespuestaRetiro(51); // Fondos Insuficientes
+			return new RespuestaRetiro(RespuestaOperacion.FondosInsuficientes);
 
 		cuenta.Monto -= montoRetiro;
-		return new RespuestaRetiro(0, montoRetiro, cuenta.Monto); // Autorizado
+		return new RespuestaRetiro(RespuestaOperacion.Exito, montoRetiro, cuenta.Monto);
 
 	}
 
@@ -200,19 +200,29 @@ public class Autorizador : IAutorizador
 
 	}
 
-	private Tuple<bool, int> EsConsultaValida(string numeroTarjeta, byte[] criptogramaPin)
+	private Tuple<bool, RespuestaOperacion> EsConsultaValida(string numeroTarjeta, byte[] criptogramaPin)
 	{
 		if (!TarjetaExiste(numeroTarjeta))
-			return new(false, 56); // Esta tarjeta no se reconoce
+			return new(false, RespuestaOperacion.TarjetaNoReconocida);
 
 		if (!TarjetaTienePin(numeroTarjeta))
-			return new(false, 55); // Esta tarjeta no tiene pin asignado
+			return new(false, RespuestaOperacion.PinIncorrecto);
 
 		byte[] criptogramaPinReal = ObtenerCriptogramaPinTarjeta(numeroTarjeta);
 
 		if (!hsm.ValidarPin(criptogramaPin, criptogramaLlaveAutorizador, criptogramaPinReal))
-			return new(false, 55); // Pin incorrecto
+			return new(false, RespuestaOperacion.PinIncorrecto);
 
-		return new(true, 0);
+		return new(true, RespuestaOperacion.Exito);
 	}
+}
+
+public enum RespuestaOperacion
+{
+	Exito = 0,
+	TarjetaBloqueada = 49,
+	LimiteTransaccion = 50,
+	FondosInsuficientes = 51,
+	PinIncorrecto = 55,
+	TarjetaNoReconocida = 56,
 }

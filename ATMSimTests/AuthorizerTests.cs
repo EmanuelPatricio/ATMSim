@@ -54,7 +54,7 @@ public class AuthorizerTests
 		// ASSERT
 		_ = respuesta.MontoAutorizado.Should().Be(15_500);
 		_ = respuesta.BalanceLuegoDelRetiro.Should().Be(-5_500);
-		_ = respuesta.CodigoRespuesta.Should().Be(0);
+		_ = respuesta.CodigoRespuesta.Should().Be(RespuestaOperacion.Exito);
 	}
 
 	[Fact]
@@ -73,7 +73,7 @@ public class AuthorizerTests
 		RespuestaConsultaDeBalance respuesta = sut.ConsultarBalance(numeroTarjeta, criptogramaPinIncorrecto);
 
 		// ASSERT
-		_ = respuesta.CodigoRespuesta.Should().Be(55);
+		_ = respuesta.CodigoRespuesta.Should().Be(RespuestaOperacion.PinIncorrecto);
 		_ = respuesta.BalanceActual.Should().BeNull();
 	}
 
@@ -93,7 +93,7 @@ public class AuthorizerTests
 		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 15_500, criptogramaPin);
 
 		// ASSERT
-		_ = respuesta.CodigoRespuesta.Should().Be(51);
+		_ = respuesta.CodigoRespuesta.Should().Be(RespuestaOperacion.FondosInsuficientes);
 	}
 
 	[Fact]
@@ -111,7 +111,7 @@ public class AuthorizerTests
 		RespuestaConsultaDeBalance respuesta = sut.ConsultarBalance(numeroTarjeta, criptogramaPinIncorrecto);
 
 		// ASSERT
-		_ = respuesta.CodigoRespuesta.Should().Be(0);
+		_ = respuesta.CodigoRespuesta.Should().Be(RespuestaOperacion.Exito);
 		_ = respuesta.BalanceActual.Should().Be(10_000);
 	}
 
@@ -159,7 +159,7 @@ public class AuthorizerTests
 		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 15_500, criptogramaPin);
 
 		// ASSERT
-		_ = respuesta.CodigoRespuesta.Should().Be(50);
+		_ = respuesta.CodigoRespuesta.Should().Be(RespuestaOperacion.LimiteTransaccion);
 	}
 
 	[Fact]
@@ -177,7 +177,7 @@ public class AuthorizerTests
 		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 35_000, criptogramaPin);
 
 		// ASSERT
-		_ = respuesta.CodigoRespuesta.Should().Be(51);
+		_ = respuesta.CodigoRespuesta.Should().Be(RespuestaOperacion.FondosInsuficientes);
 	}
 
 	[Fact]
@@ -196,6 +196,6 @@ public class AuthorizerTests
 		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 1_000, criptogramaPin);
 
 		// ASSERT
-		_ = respuesta.CodigoRespuesta.Should().Be(49);
+		_ = respuesta.CodigoRespuesta.Should().Be(RespuestaOperacion.TarjetaBloqueada);
 	}
 }

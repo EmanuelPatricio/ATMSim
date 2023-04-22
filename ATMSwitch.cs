@@ -73,8 +73,6 @@ public interface IATMSwitch
 	public void EliminarAutorizador(string nombreAutorizador);
 	public void AgregarRuta(string bin, string nombreAutorizador);
 	public List<Comando> Autorizar(IATM atm, string opKeyBuffer, string numeroTarjeta, int monto, byte[] criptogramaPin);
-
-
 }
 
 public class ATMSwitch : IATMSwitch
@@ -82,15 +80,9 @@ public class ATMSwitch : IATMSwitch
 	private IHSM hsm;
 	private Dictionary<string, byte[]> LlavesDeAtm { get; set; } = new Dictionary<string, byte[]>();
 	private Dictionary<string, byte[]> LlavesDeAutorizador { get; set; } = new Dictionary<string, byte[]>();
-
-
 	private Dictionary<string, IAutorizador> Autorizadores { get; set; } = new Dictionary<string, IAutorizador>();
-
-
-
 	private List<Ruta> tablaRuteo = new();
 	private List<ConfiguracionOpKey> tablaOpKeys = new();
-
 	private IConsoleWriter consoleWriter;
 
 	public ATMSwitch(IHSM hsm, IConsoleWriter consoleWriter)
@@ -144,11 +136,6 @@ public class ATMSwitch : IATMSwitch
 			return MostrarErrorGenerico();
 		}
 
-		if (autorizador.TarjetaBloqueada(numeroTarjeta))
-		{
-			return MostrarErrorTarjetaBLoqueada();
-		}
-
 		if (!LlavesDeAtm.ContainsKey(atm.Nombre) || !LlavesDeAutorizador.ContainsKey(autorizador.Nombre))
 			return MostrarErrorGenerico();
 
@@ -158,27 +145,15 @@ public class ATMSwitch : IATMSwitch
 		byte[] criptogramaTraducidoPin = hsm.TraducirPin(criptogramaPin, criptogramaLlaveOrigen, criptogramaLlaveDestino);
 
 
-		switch (opKeyConfig.TipoTransaccion)
+		return opKeyConfig.TipoTransaccion switch
 		{
-			case TipoTransaccion.Retiro:
-				return AutorizarRetiro(atm, numeroTarjeta, monto, criptogramaTraducidoPin, autorizador, opKeyConfig);
-			case TipoTransaccion.Consulta:
-				return AutorizarConsulta(atm, numeroTarjeta, criptogramaTraducidoPin, autorizador, opKeyConfig);
-			default:
-				return MostrarErrorGenerico();
-
-		}
-
-	}
-	private List<Comando> MostrarErrorTarjetaBLoqueada()
-	{
-		List<Comando> comandos = new();
-		string texto = "Al parecer su tarjeta se encuentra bloqueada, por favor comuniquese con el personal pertinente...";
-		comandos.Add(new ComandoMostrarInfoEnPantalla(texto, true));
-		return comandos;
+			TipoTransaccion.Retiro => AutorizarRetiro(atm, numeroTarjeta, monto, criptogramaTraducidoPin, autorizador, opKeyConfig),
+			TipoTransaccion.Consulta => AutorizarConsulta(numeroTarjeta, criptogramaTraducidoPin, autorizador),
+			_ => MostrarErrorGenerico(),
+		};
 	}
 
-	private List<Comando> MostrarErrorGenerico()
+	private static List<Comando> MostrarErrorGenerico()
 	{
 		List<Comando> comandos = new();
 		string texto = "Lo Sentimos. En este momento no podemos procesar su transacción.\n\n" +
@@ -187,7 +162,7 @@ public class ATMSwitch : IATMSwitch
 		return comandos;
 	}
 
-	private List<Comando> AutorizarRetiro(IATM atm, string numeroTarjeta, int monto, byte[] criptogramaPin, IAutorizador autorizador, ConfiguracionOpKey opKeyConfig)
+	private static List<Comando> AutorizarRetiro(IATM atm, string numeroTarjeta, int monto, byte[] criptogramaPin, IAutorizador autorizador, ConfiguracionOpKey opKeyConfig)
 	{
 		List<Comando> comandos = new();
 
@@ -199,13 +174,11 @@ public class ATMSwitch : IATMSwitch
 			return comandos;
 		}
 
-
 		RespuestaRetiro respuesta = autorizador.AutorizarRetiro(numeroTarjeta, monto, criptogramaPin);
-
 
 		switch (respuesta.CodigoRespuesta)
 		{
-			case 0:
+			case RespuestaOperacion.Exito:
 				comandos.Add(new ComandoMostrarInfoEnPantalla("Espere mientras se dispensa su dinero", false));
 				comandos.Add(new ComandoDispensarEfectivo(respuesta.MontoAutorizado ?? 0));
 				comandos.Add(new ComandoMostrarInfoEnPantalla("Favor de retirar su tarjeta", false));
@@ -220,14 +193,20 @@ public class ATMSwitch : IATMSwitch
 														   $"Balance Actual: {respuesta.BalanceLuegoDelRetiro}"));
 				}
 				break;
-			case 51:
+			case RespuestaOperacion.FondosInsuficientes:
 				comandos.Add(new ComandoMostrarInfoEnPantalla("Su cuenta no posee balance suficiente para realizar el retiro", true));
 				break;
-			case 55:
+			case RespuestaOperacion.PinIncorrecto:
 				comandos.Add(new ComandoMostrarInfoEnPantalla("Pin incorrecto", true));
 				break;
-			case 56:
+			case RespuestaOperacion.TarjetaNoReconocida:
 				comandos.Add(new ComandoMostrarInfoEnPantalla("Tarjeta no reconocida", true));
+				break;
+			case RespuestaOperacion.TarjetaBloqueada:
+				comandos.Add(new ComandoMostrarInfoEnPantalla("Al parecer su tarjeta se encuentra bloqueada, por favor comuniquese con el personal pertinente...", true));
+				break;
+			case RespuestaOperacion.LimiteTransaccion:
+				comandos.Add(new ComandoMostrarInfoEnPantalla("Su transacción ha alcanzado el limite permitido por transaccion", true));
 				break;
 			default:
 				comandos.Add(new ComandoMostrarInfoEnPantalla("Su transacción no puede ser procesada. Por favor intente más tarde.", true));
@@ -237,7 +216,7 @@ public class ATMSwitch : IATMSwitch
 		return comandos;
 	}
 
-	private List<Comando> AutorizarConsulta(IATM atm, string numeroTarjeta, byte[] criptogramaPin, IAutorizador autorizador, ConfiguracionOpKey opKeyConfig)
+	private static List<Comando> AutorizarConsulta(string numeroTarjeta, byte[] criptogramaPin, IAutorizador autorizador)
 	{
 		List<Comando> comandos = new();
 
@@ -245,13 +224,13 @@ public class ATMSwitch : IATMSwitch
 
 		switch (respuesta.CodigoRespuesta)
 		{
-			case 0:
+			case RespuestaOperacion.Exito:
 				comandos.Add(new ComandoMostrarInfoEnPantalla($"Su balance actual es de: {respuesta.BalanceActual}", false));
 				break;
-			case 55:
+			case RespuestaOperacion.PinIncorrecto:
 				comandos.Add(new ComandoMostrarInfoEnPantalla("Pin incorrecto", true));
 				break;
-			case 56:
+			case RespuestaOperacion.TarjetaNoReconocida:
 				comandos.Add(new ComandoMostrarInfoEnPantalla("Tarjeta no reconocida", true));
 				break;
 			default:
