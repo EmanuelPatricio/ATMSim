@@ -26,7 +26,7 @@ IATMSwitch atmSwitch = CrearSwitch(hsm, consoleWriter);
 IATM atm = CrearATM("AJP001", consoleWriter, threadSleeper);
 RegistrarATMEnSwitch(atm, atmSwitch, hsm);
 
-IAutorizador autorizador = CrearAutorizador("AutDB", hsm);
+IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 RegistrarAutorizadorEnSwitch(autorizador, atmSwitch, hsm);
 
 string numeroTarjeta = CrearCuentaYTarjeta(autorizador, tipoDeCuenta, balanceInicialCuenta, binTarjeta, pin);
@@ -55,7 +55,7 @@ static void RegistrarATMEnSwitch(IATM atm, IATMSwitch atmSwitch, IHSM hsm)
 	atmSwitch.RegistrarATM(atm, llaveATM.LlaveEncriptada);
 }
 
-static IAutorizador CrearAutorizador(string nombre, IHSM hsm) => new Autorizador(nombre, hsm);
+static IAutorizador CrearAutorizador(string nombre, IHSM hsm, decimal limite) => new Autorizador(nombre, hsm, limite);
 static void RegistrarAutorizadorEnSwitch(IAutorizador autorizador, IATMSwitch atmSwitch, IHSM hsm)
 {
 	ComponentesLlave llaveAutorizador = hsm.GenerarLlave();

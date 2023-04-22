@@ -22,7 +22,7 @@ public class AtmSwitchTests
 		return numeroTarjeta;
 	}
 
-	private static IAutorizador CrearAutorizador(string nombre, IHSM hsm) => new Autorizador(nombre, hsm);
+	private static IAutorizador CrearAutorizador(string nombre, IHSM hsm, decimal limite) => new Autorizador(nombre, hsm, limite);
 
 	private static void RegistrarATMEnSwitch(IATM atm, IATMSwitch atmSwitch, IHSM hsm)
 	{
@@ -100,7 +100,7 @@ public class AtmSwitchTests
 		IATM atm = CrearATMFalso("AJP001");
 		RegistrarATMEnSwitch(atm, sut, hsm);
 
-		IAutorizador autorizador = CrearAutorizador("AutDB", hsm);
+		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
 
 		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20_000, binTarjeta, "1234");
@@ -130,7 +130,7 @@ public class AtmSwitchTests
 		IATMSwitch sut = CrearSwitch(hsm, consoleWriter);
 		IATM atm = CrearATMFalso("AJP001");
 		RegistrarATMEnSwitch(atm, sut, hsm);
-		IAutorizador autorizador = CrearAutorizador("AutDB", hsm);
+		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
 
 		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 0, binTarjeta, "1234");
@@ -160,7 +160,7 @@ public class AtmSwitchTests
 		IATMSwitch sut = CrearSwitch(hsm, consoleWriter);
 		IATM atm = CrearATMFalso("AJP001");
 		RegistrarATMEnSwitch(atm, sut, hsm);
-		IAutorizador autorizador = CrearAutorizador("AutDB", hsm);
+		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
 
 		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 0, binTarjeta, "1234");
@@ -190,7 +190,7 @@ public class AtmSwitchTests
 		IATMSwitch sut = CrearSwitch(hsm, consoleWriter);
 		IATM atm = CrearATMFalso("AJP001");
 		RegistrarATMEnSwitch(atm, sut, hsm);
-		IAutorizador autorizador = CrearAutorizador("AutDB", hsm);
+		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 		RegistrarAutorizadorEnSwitch(autorizador, sut, hsm);
 
 		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20000, binTarjeta, "1234");

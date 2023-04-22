@@ -28,7 +28,7 @@ public class AtmTests
 		atmSwitch.RegistrarATM(atm, llaveATM.LlaveEncriptada);
 	}
 
-	private static IAutorizador CrearAutorizador(string nombre, IHSM hsm) => new Autorizador(nombre, hsm);
+	private static IAutorizador CrearAutorizador(string nombre, IHSM hsm, decimal limite) => new Autorizador(nombre, hsm, limite);
 
 	private static void RegistrarAutorizadorEnSwitch(IAutorizador autorizador, IATMSwitch atmSwitch, IHSM hsm)
 	{
@@ -77,7 +77,7 @@ public class AtmTests
 		IATM sut = CrearATM("AJP001", consoleWriter, threadSleeper);
 		RegistrarATMEnSwitch(sut, atmSwitch, hsm);
 
-		IAutorizador autorizador = CrearAutorizador("AutDB", hsm);
+		IAutorizador autorizador = CrearAutorizador("AutDB", hsm, 10_000);
 		RegistrarAutorizadorEnSwitch(autorizador, atmSwitch, hsm);
 
 		string numeroTarjeta = CrearCuentaYTarjeta(autorizador, TipoCuenta.Ahorros, 20_000, "459413", "1234");

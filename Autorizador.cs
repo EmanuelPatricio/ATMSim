@@ -49,11 +49,13 @@ public class Autorizador : IAutorizador
 	private readonly Dictionary<string, byte[]> pinesTarjetas = new();
 
 	private byte[]? criptogramaLlaveAutorizador;
+	private readonly decimal limiteTransaccion;
 
-	public Autorizador(string nombre, IHSM hsm)
+	public Autorizador(string nombre, IHSM hsm, decimal limiteTransaccion)
 	{
 		Nombre = nombre;
 		this.hsm = hsm;
+		this.limiteTransaccion = limiteTransaccion;
 	}
 
 	public void AsignarPin(string numeroTarjeta, string pin)
@@ -112,6 +114,10 @@ public class Autorizador : IAutorizador
 			return new RespuestaRetiro(51); // Fondos Insuficientes
 		else
 		{
+			if (limiteTransaccion < montoRetiro)
+			{
+				return new RespuestaRetiro(50); // Limite de transaccion alcanzado
+			}
 			cuenta.Monto -= montoRetiro;
 			return new RespuestaRetiro(0, montoRetiro, cuenta.Monto); // Autorizado
 		}
