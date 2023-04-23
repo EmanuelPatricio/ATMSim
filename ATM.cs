@@ -20,8 +20,8 @@ public class Comando { }
 
 public class ComandoDispensarEfectivo : Comando
 {
-	public int Monto { get; private set; }
-	public ComandoDispensarEfectivo(int monto) { Monto = monto; }
+	public decimal Monto { get; private set; }
+	public ComandoDispensarEfectivo(decimal monto) { Monto = monto; }
 }
 
 public class ComandoImprimirRecibo : Comando

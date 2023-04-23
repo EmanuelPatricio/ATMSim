@@ -5,9 +5,9 @@ namespace ATMSim;
 public interface IAutorizador
 {
 	public RespuestaConsultaDeBalance ConsultarBalance(string numeroTarjeta, byte[] criptogramaPin);
-	public RespuestaRetiro AutorizarRetiro(string numeroTarjeta, int montoRetiro, byte[] criptogramaPin);
+	public RespuestaRetiro AutorizarRetiro(string numeroTarjeta, decimal montoRetiro, byte[] criptogramaPin);
 	public string CrearTarjeta(string bin, string numeroCuenta);
-	public string CrearCuenta(TipoCuenta tipo, int montoDeApertura = 0, decimal limiteSobregiro = 0.00M);
+	public string CrearCuenta(TipoCuenta tipo, decimal montoDeApertura = 0, decimal limiteSobregiro = 0.00M);
 	public string Nombre { get; }
 	public void AsignarPin(string numeroTarjeta, string pin);
 	public void InstalarLlave(byte[] criptogramaLlaveAutorizador);
@@ -23,16 +23,16 @@ public class Respuesta
 
 public class RespuestaConsultaDeBalance : Respuesta
 {
-	public int? BalanceActual { get; private set; }
-	public RespuestaConsultaDeBalance(RespuestaOperacion codigoRespuesta, int? balanceActual = null) : base(codigoRespuesta)
+	public decimal? BalanceActual { get; private set; }
+	public RespuestaConsultaDeBalance(RespuestaOperacion codigoRespuesta, decimal? balanceActual = null) : base(codigoRespuesta)
 		=> BalanceActual = balanceActual;
 }
 
 public class RespuestaRetiro : Respuesta
 {
-	public int? MontoAutorizado { get; private set; }
-	public int? BalanceLuegoDelRetiro { get; private set; }
-	public RespuestaRetiro(RespuestaOperacion codigoRespuesta, int? montoAutorizado = null, int? balanceLuegoDelRetiro = null) : base(codigoRespuesta)
+	public decimal? MontoAutorizado { get; private set; }
+	public decimal? BalanceLuegoDelRetiro { get; private set; }
+	public RespuestaRetiro(RespuestaOperacion codigoRespuesta, decimal? montoAutorizado = null, decimal? balanceLuegoDelRetiro = null) : base(codigoRespuesta)
 		=> (MontoAutorizado, BalanceLuegoDelRetiro) = (montoAutorizado, balanceLuegoDelRetiro);
 }
 
@@ -101,10 +101,10 @@ public class Autorizador : IAutorizador
 		Tarjeta tarjeta = ObtenerTarjeta(numeroTarjeta);
 		Cuenta cuenta = ObtenerCuenta(tarjeta.NumeroCuenta);
 
-		return new RespuestaConsultaDeBalance(0, cuenta.Monto); // Autorizado
+		return new RespuestaConsultaDeBalance(RespuestaOperacion.Exito, cuenta.Monto); // Autorizado
 	}
 
-	public RespuestaRetiro AutorizarRetiro(string numeroTarjeta, int montoRetiro, byte[] criptogramaPin)
+	public RespuestaRetiro AutorizarRetiro(string numeroTarjeta, decimal montoRetiro, byte[] criptogramaPin)
 	{
 		var (consultaValida, codigoError) = EsConsultaValida(numeroTarjeta, criptogramaPin);
 
@@ -166,7 +166,7 @@ public class Autorizador : IAutorizador
 		return tarjeta.Numero;
 	}
 
-	public string CrearCuenta(TipoCuenta tipo, int montoDeApertura = 0, decimal limiteSobregiro = 0.00M)
+	public string CrearCuenta(TipoCuenta tipo, decimal montoDeApertura = 0, decimal limiteSobregiro = 0.00M)
 	{
 		string numero;
 		do
