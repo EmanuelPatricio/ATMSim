@@ -3,9 +3,9 @@
 public interface IConsoleWriter
 {
 	public void Write(string text);
-	public void Write(int text);
+	public void Write(decimal text);
 	public void WriteLine(string text);
-	public void WriteLine(int text);
+	public void WriteLine(decimal text);
 	public void ResetColor();
 
 	public ConsoleColor ForegroundColor { get; set; }
@@ -28,7 +28,7 @@ public class ConsoleWriter : IConsoleWriter
 		Console.Write(text);
 	}
 
-	public void Write(int text)
+	public void Write(decimal text)
 	{
 		Console.Write(text);
 	}
@@ -38,7 +38,7 @@ public class ConsoleWriter : IConsoleWriter
 		Console.WriteLine(text);
 	}
 
-	public void WriteLine(int text)
+	public void WriteLine(decimal text)
 	{
 		Console.WriteLine(text);
 	}

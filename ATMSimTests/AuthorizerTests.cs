@@ -6,7 +6,7 @@ namespace ATMSimTests;
 
 public class AuthorizerTests
 {
-	private static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, int balanceInicial, decimal limiteSobregiro, string binTarjeta, string pin)
+	private static string CrearCuentaYTarjeta(IAutorizador autorizador, TipoCuenta tipoCuenta, decimal balanceInicial, decimal limiteSobregiro, string binTarjeta, string pin)
 	{
 		string numeroCuenta = autorizador.CrearCuenta(tipoCuenta, balanceInicial, limiteSobregiro);
 		string numeroTarjeta = autorizador.CrearTarjeta(binTarjeta, numeroCuenta);
@@ -197,5 +197,24 @@ public class AuthorizerTests
 
 		// ASSERT
 		_ = respuesta.CodigoRespuesta.Should().Be(RespuestaOperacion.TarjetaBloqueada);
+	}
+
+	[Fact]
+	public void AccountWithdrawAllowsTwoDecimalPlacesShouldReturnStatus0()
+	{
+		// ARRANGE
+		IHSM hsm = new HSM();
+		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 50_000);
+		ComponentesLlave llave = hsm.GenerarLlave();
+		sut.InstalarLlave(llave.LlaveEncriptada);
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 20_000.74M, 10_000, "455555", "1234");
+		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
+
+		// ACT
+		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 99.53M, criptogramaPin);
+
+		// ASSERT
+		_ = respuesta.CodigoRespuesta.Should().Be(RespuestaOperacion.Exito);
+		_ = respuesta.BalanceLuegoDelRetiro.Should().Be(19_901.21M);
 	}
 }

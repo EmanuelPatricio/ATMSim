@@ -54,7 +54,7 @@ internal class FakeConsoleWriter : IConsoleWriter
 		writeCount++;
 	}
 
-	public void Write(int text)
+	public void Write(decimal text)
 	{
 		consoleText += text.ToString();
 		consoleTextWithColorInfo += text.ToString();
@@ -68,7 +68,7 @@ internal class FakeConsoleWriter : IConsoleWriter
 		writeLineCount++;
 	}
 
-	public void WriteLine(int text)
+	public void WriteLine(decimal text)
 	{
 		consoleText += text.ToString() + "\n";
 		consoleTextWithColorInfo += text.ToString() + "\n";

@@ -14,8 +14,8 @@ internal class Cuenta
 	public TipoCuenta Tipo { get; private set; }
 	public string Numero { get; private set; }
 
-	private int monto = 0;
-	public int Monto
+	private decimal monto = 0;
+	public decimal Monto
 	{
 		get { return monto; }
 		set
@@ -40,7 +40,7 @@ internal class Cuenta
 		}
 	}
 
-	public Cuenta(string numero, TipoCuenta tipo, int monto = 0, decimal limite = 0.00M)
+	public Cuenta(string numero, TipoCuenta tipo, decimal monto = 0, decimal limite = 0.00M)
 	{
 		if (!Regex.Match(numero, @"[0-9]+").Success)
 			throw new ArgumentException("Numero de cuenta inválido");
