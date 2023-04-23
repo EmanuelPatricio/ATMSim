@@ -23,7 +23,7 @@ public class TarjetaTests
 		string numeroTarjeta = "1234567890"; // número inválido
 
 		// Act & Assert
-		Assert.Throws<ArgumentException>(() => new Tarjeta(numeroTarjeta, "1234"));
+		_ = Assert.Throws<ArgumentException>(() => new Tarjeta(numeroTarjeta));
 	}
 
 	[Fact]

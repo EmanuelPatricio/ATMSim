@@ -16,7 +16,19 @@ public class AuthorizerTests
 
 	private static IAutorizador CrearAutorizador(string nombre, IHSM hsm, decimal limite) => new Autorizador(nombre, hsm, limite);
 
-	public static byte[] Encriptar(string textoPlano, byte[] llaveEnClaro)
+	private static (IAutorizador SUT, string NumeroTarjeta, byte[] CriptogramaPin) Arrange(decimal limiteTransaccion, TipoCuenta tipoCuenta, decimal balanceInicial, decimal limiteSobregiro, string binTarjeta, string pinTarjeta, string textoPlano)
+	{
+		IHSM hsm = new HSM();
+		IAutorizador sut = CrearAutorizador("Autorizador", hsm, limiteTransaccion);
+		ComponentesLlave llave = hsm.GenerarLlave();
+		sut.InstalarLlave(llave.LlaveEncriptada);
+		string numeroTarjeta = CrearCuentaYTarjeta(sut, tipoCuenta, balanceInicial, limiteSobregiro, binTarjeta, pinTarjeta);
+		byte[] criptogramaPin = Encriptar(textoPlano, llave.LlaveEnClaro);
+
+		return (sut, numeroTarjeta, criptogramaPin);
+	}
+
+	private static byte[] Encriptar(string textoPlano, byte[] llaveEnClaro)
 	{
 		const int TAMANO_LLAVE = 32;
 
@@ -41,12 +53,7 @@ public class AuthorizerTests
 	public void Accounts_of_type_checking_allow_overdraft()
 	{
 		// ARRANGE
-		IHSM hsm = new HSM();
-		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 20_000);
-		ComponentesLlave llave = hsm.GenerarLlave();
-		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 10_000, 0, "455555", "1234");
-		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
+		var (sut, numeroTarjeta, criptogramaPin) = Arrange(20_000, TipoCuenta.Corriente, 10_000, 0, "455555", "1234", "1234");
 
 		// ACT
 		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 15_500, criptogramaPin);
@@ -61,13 +68,7 @@ public class AuthorizerTests
 	public void Balance_Inquiry_with_incorrect_pin_return_respcode_55()
 	{
 		// ARRANGE
-		IHSM hsm = new HSM();
-		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 10_000);
-		ComponentesLlave llave = hsm.GenerarLlave();
-		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 10_000, 0, "455555", "1234");
-
-		byte[] criptogramaPinIncorrecto = Encriptar("9999", llave.LlaveEnClaro);
+		var (sut, numeroTarjeta, criptogramaPinIncorrecto) = Arrange(10_000, TipoCuenta.Corriente, 10_000, 0, "455555", "1234", "9999");
 
 		// ACT
 		RespuestaConsultaDeBalance respuesta = sut.ConsultarBalance(numeroTarjeta, criptogramaPinIncorrecto);
@@ -82,12 +83,7 @@ public class AuthorizerTests
 	public void AccountOfTypeSavingsDoesntAllowOverdraftAndReturns51()
 	{
 		// ARRANGE
-		IHSM hsm = new HSM();
-		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 10_000);
-		ComponentesLlave llave = hsm.GenerarLlave();
-		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Ahorros, 10_000, 0, "455555", "1234");
-		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
+		var (sut, numeroTarjeta, criptogramaPin) = Arrange(10_000, TipoCuenta.Ahorros, 10_000, 0, "455555", "1234", "1234");
 
 		// ACT
 		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 15_500, criptogramaPin);
@@ -100,12 +96,7 @@ public class AuthorizerTests
 	public void BalanceInquiryWithCorrectPinReturnInitialBalance()
 	{
 		// ARRANGE
-		IHSM hsm = new HSM();
-		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 10_000);
-		ComponentesLlave llave = hsm.GenerarLlave();
-		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 10_000, 0, "455555", "1234");
-		byte[] criptogramaPinIncorrecto = Encriptar("1234", llave.LlaveEnClaro);
+		var (sut, numeroTarjeta, criptogramaPinIncorrecto) = Arrange(10_000, TipoCuenta.Corriente, 10_000, 0, "455555", "1234", "1234");
 
 		// ACT
 		RespuestaConsultaDeBalance respuesta = sut.ConsultarBalance(numeroTarjeta, criptogramaPinIncorrecto);
@@ -148,12 +139,7 @@ public class AuthorizerTests
 	public void ATMTransactionLimitReachedShouldReturnStatus50()
 	{
 		// ARRANGE
-		IHSM hsm = new HSM();
-		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 10_000);
-		ComponentesLlave llave = hsm.GenerarLlave();
-		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Ahorros, 20_000, 0, "455555", "1234");
-		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
+		var (sut, numeroTarjeta, criptogramaPin) = Arrange(10_000, TipoCuenta.Ahorros, 20_000, 0, "455555", "1234", "1234");
 
 		// ACT
 		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 15_500, criptogramaPin);
@@ -166,12 +152,7 @@ public class AuthorizerTests
 	public void AccountOfTypeCheckingReachedOverdraftLimitShouldReturnStatus51()
 	{
 		// ARRANGE
-		IHSM hsm = new HSM();
-		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 50_000);
-		ComponentesLlave llave = hsm.GenerarLlave();
-		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 20_000, 10_000, "455555", "1234");
-		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
+		var (sut, numeroTarjeta, criptogramaPin) = Arrange(50_000, TipoCuenta.Corriente, 20_000, 10_000, "455555", "1234", "1234");
 
 		// ACT
 		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 35_000, criptogramaPin);
@@ -184,12 +165,7 @@ public class AuthorizerTests
 	public void BlockedCardPreventsTransactionsShouldReturnStatus49()
 	{
 		// ARRANGE
-		IHSM hsm = new HSM();
-		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 50_000);
-		ComponentesLlave llave = hsm.GenerarLlave();
-		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 20_000, 10_000, "455555", "1234");
-		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
+		var (sut, numeroTarjeta, criptogramaPin) = Arrange(50_000, TipoCuenta.Corriente, 20_000, 10_000, "455555", "1234", "1234");
 		sut.BloquearTarjeta(numeroTarjeta);
 
 		// ACT
@@ -203,12 +179,7 @@ public class AuthorizerTests
 	public void AccountWithdrawAllowsTwoDecimalPlacesShouldReturnStatus0()
 	{
 		// ARRANGE
-		IHSM hsm = new HSM();
-		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 50_000);
-		ComponentesLlave llave = hsm.GenerarLlave();
-		sut.InstalarLlave(llave.LlaveEncriptada);
-		string numeroTarjeta = CrearCuentaYTarjeta(sut, TipoCuenta.Corriente, 20_000.74M, 10_000, "455555", "1234");
-		byte[] criptogramaPin = Encriptar("1234", llave.LlaveEnClaro);
+		var (sut, numeroTarjeta, criptogramaPin) = Arrange(50_000, TipoCuenta.Corriente, 20_000.74M, 10_000, "455555", "1234", "1234");
 
 		// ACT
 		RespuestaRetiro respuesta = sut.AutorizarRetiro(numeroTarjeta, 99.53M, criptogramaPin);
@@ -216,5 +187,21 @@ public class AuthorizerTests
 		// ASSERT
 		_ = respuesta.CodigoRespuesta.Should().Be(RespuestaOperacion.Exito);
 		_ = respuesta.BalanceLuegoDelRetiro.Should().Be(19_901.21M);
+	}
+
+	[Fact]
+	public void AuthorizerStablishCardAndAccountRelashionshipShouldBeTrue()
+	{
+		// ARRANGE
+		IHSM hsm = new HSM();
+		IAutorizador sut = CrearAutorizador("Autorizador", hsm, 10_000);
+		var numeroCuenta = sut.CrearCuenta(TipoCuenta.Corriente);
+		var numeroTarjeta = sut.CrearTarjeta("455555", numeroCuenta);
+
+		// ACT
+		var esTarjetaAsignadaACuenta = sut.EsTarjetaConCuenta(numeroTarjeta);
+
+		// ASSERT
+		Assert.True(esTarjetaAsignadaACuenta);
 	}
 }
