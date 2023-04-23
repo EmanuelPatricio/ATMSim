@@ -6,9 +6,7 @@ public class Tarjeta
 {
 	public string Numero { get; private set; }
 
-	public string NumeroCuenta { get; private set; }
-	
-	public Tarjeta(string numero, string numeroCuenta, bool contieneDigitoVerificador = false)
+	public Tarjeta(string numero, bool contieneDigitoVerificador = false)
 	{
 
 		if (NumeroDeTarjetaValido(numero))
@@ -18,8 +16,6 @@ public class Tarjeta
 		{
 			throw new ArgumentException("Dígito verificador inválido");
 		}
-
-		NumeroCuenta = numeroCuenta;
 		Numero = contieneDigitoVerificador ? numero : numero + CalcularDigitoVerificacion(numero);
 	}
 

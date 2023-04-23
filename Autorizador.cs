@@ -13,6 +13,7 @@ public interface IAutorizador
 	public void InstalarLlave(byte[] criptogramaLlaveAutorizador);
 	void BloquearTarjeta(string numeroTarjeta);
 	bool TarjetaBloqueada(string numeroTarjeta);
+	bool EsTarjetaConCuenta(string numeroTarjeta);
 }
 
 public class Respuesta
@@ -50,6 +51,7 @@ public class Autorizador : IAutorizador
 	private List<Cuenta> cuentas = new();
 	private Dictionary<string, byte[]> pinesTarjetas = new();
 	private Dictionary<string, bool> bloqueoTarjetas = new();
+	private Dictionary<string, string> tarjetaCuenta = new();
 
 	private byte[]? criptogramaLlaveAutorizador;
 	private decimal limiteTransaccion;
@@ -77,6 +79,8 @@ public class Autorizador : IAutorizador
 	public void BloquearTarjeta(string numeroTarjeta) => bloqueoTarjetas[numeroTarjeta] = true;
 	public bool TarjetaBloqueada(string numeroTarjeta) => bloqueoTarjetas[numeroTarjeta];
 
+	public bool EsTarjetaConCuenta(string numeroTarjeta) => tarjetaCuenta.ContainsKey(numeroTarjeta);
+
 	private bool TarjetaExiste(string numeroTarjeta) => tarjetas.Where(x => x.Numero == numeroTarjeta).Any();
 
 	private Tarjeta ObtenerTarjeta(string numeroTarjeta) => tarjetas.Where(x => x.Numero == numeroTarjeta).Single();
@@ -98,8 +102,8 @@ public class Autorizador : IAutorizador
 			return new RespuestaConsultaDeBalance(codigoError);
 		}
 
-		Tarjeta tarjeta = ObtenerTarjeta(numeroTarjeta);
-		Cuenta cuenta = ObtenerCuenta(tarjeta.NumeroCuenta);
+		_ = ObtenerTarjeta(numeroTarjeta);
+		Cuenta cuenta = ObtenerCuenta(tarjetaCuenta[numeroTarjeta]);
 
 		return new RespuestaConsultaDeBalance(RespuestaOperacion.Exito, cuenta.Monto); // Autorizado
 	}
@@ -118,8 +122,8 @@ public class Autorizador : IAutorizador
 			return new RespuestaRetiro(RespuestaOperacion.TarjetaBloqueada);
 		}
 
-		Tarjeta tarjeta = ObtenerTarjeta(numeroTarjeta);
-		Cuenta cuenta = ObtenerCuenta(tarjeta.NumeroCuenta);
+		_ = ObtenerTarjeta(numeroTarjeta);
+		Cuenta cuenta = ObtenerCuenta(tarjetaCuenta[numeroTarjeta]);
 
 		if (cuenta.Tipo == TipoCuenta.Ahorros && cuenta.Monto < montoRetiro)
 			return new RespuestaRetiro(RespuestaOperacion.FondosInsuficientes);
@@ -159,9 +163,10 @@ public class Autorizador : IAutorizador
 		}
 		while (tarjetas.Where(x => x.Numero[..^1] == numeroSinDigitoVerificador).Any());
 
-		Tarjeta tarjeta = new(numeroSinDigitoVerificador, numeroCuenta);
+		Tarjeta tarjeta = new(numeroSinDigitoVerificador);
 		tarjetas.Add(tarjeta);
 		bloqueoTarjetas[tarjeta.Numero] = false;
+		tarjetaCuenta[tarjeta.Numero] = numeroCuenta;
 
 		return tarjeta.Numero;
 	}
